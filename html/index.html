@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Echoes of Aethon</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- HEADER -->
+  <header id="hdr">
+    <div class="logo">⚔ Echoes of Aethon</div>
+    <div class="hstats">
+      <div class="bw">
+        <span class="blabel hp-label">HP</span>
+        <div class="bar"><div class="bf hp-f" id="hpbar"></div></div>
+        <span class="bv" id="hpval"></span>
+      </div>
+      <div class="bw">
+        <span class="blabel mp-label">MP</span>
+        <div class="bar"><div class="bf mp-f" id="mpbar"></div></div>
+        <span class="bv" id="mpval"></span>
+      </div>
+      <span id="hgold"></span>
+      <span id="hloc"></span>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <nav id="tabs">
+    <button class="tab on"  data-v="explore"   onclick="sv('explore')">⚔ Explore</button>
+    <button class="tab"     data-v="skills"    onclick="sv('skills')">🎓 Skills</button>
+    <button class="tab"     data-v="inventory" onclick="sv('inventory')">🎒 Items</button>
+    <button class="tab"     data-v="spellbook" onclick="sv('spellbook')">📖 Spells</button>
+    <button class="tab"     data-v="quests"    onclick="sv('quests')">📋 Quests</button>
+    <button class="tab"     data-v="map"       onclick="sv('map')">🗺 Map</button>
+  </nav>
+
+  <!-- BODY -->
+  <div id="body">
+    <main id="main"></main>
+    <aside id="side">
+      <div id="sinfo"></div>
+      <div id="slog"></div>
+    </aside>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════
+     DATA LAYER
+════════════════════════════════════════ -->
+<script src="js/data/abilities.js"></script>
+<script src="js/data/spells.js"></script>
+<script src="js/data/items.js"></script>
+<script src="js/data/enemies.js"></script>
+<script src="js/data/areas.js"></script>
+<script src="js/data/npcs.js"></script>
+<script src="js/data/quests.js"></script>
+
+<!-- ═══════════════════════════════════════
+     SYSTEMS LAYER
+════════════════════════════════════════ -->
+<script src="js/audio.js"></script>
+<script src="js/systems/state.js"></script>
+<script src="js/systems/skills.js"></script>
+<script src="js/systems/combat.js"></script>
+<script src="js/systems/dialogue.js"></script>
+<script src="js/systems/inventory.js"></script>
+<script src="js/systems/movement.js"></script>
+<script src="js/systems/quests.js"></script>
+
+<!-- ═══════════════════════════════════════
+     UI / RENDER LAYER
+════════════════════════════════════════ -->
+<script src="js/ui/render_explore.js"></script>
+<script src="js/ui/render_combat.js"></script>
+<script src="js/ui/render_dialogue.js"></script>
+<script src="js/ui/render_inventory.js"></script>
+<script src="js/ui/render_skills.js"></script>
+<script src="js/ui/render_spells.js"></script>
+<script src="js/ui/render_quests.js"></script>
+<script src="js/ui/render_map.js"></script>
+<script src="js/ui/render.js"></script>
+
+<!-- ═══════════════════════════════════════
+     ENTRY POINT
+════════════════════════════════════════ -->
+<script src="main.js"></script>
+
+</body>
+</html>

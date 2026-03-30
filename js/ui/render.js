@@ -1,12 +1,13 @@
 /* ═══════════════════════════════════════
    ECHOES OF AETHON — Render Dispatcher
-   Fixed: clears panels, try-catch on
-   every view, shows error if JS fails.
+   Ultra-defensive: every call wrapped,
+   missing functions show named errors,
+   never leaves screen blank.
    ════════════════════════════════════ */
 
 function sv(v) {
   VIEW = v;
-  sfxClick();
+  if (typeof sfxClick === 'function') sfxClick();
   document.querySelectorAll('.tab').forEach(function (t) {
     t.classList.toggle('on', t.dataset.v === v);
   });
@@ -14,111 +15,100 @@ function sv(v) {
 }
 
 function render() {
-  /* Always update header first */
-  updHdr();
+  /* Header */
+  if (typeof updHdr === 'function') {
+    try { updHdr(); } catch (e) { console.error('[Aethon] updHdr:', e); }
+  }
 
   var M = document.getElementById('main');
   var S = document.getElementById('sinfo');
-  if (!M || !S) return;
+  if (!M || !S) { console.error('[Aethon] #main or #sinfo not found in DOM'); return; }
 
-  /* Always wipe both panels before writing */
+  /* Always clear first */
   M.innerHTML = '';
   S.innerHTML = '';
 
   /* Death */
-  if (P && P.hp <= 0) {
-    M.innerHTML = renderDeath();
+  if (typeof P !== 'undefined' && P.hp <= 0) {
+    M.innerHTML = (typeof renderDeath === 'function') ? renderDeath() : '<div style="padding:20px;color:#ff8877">You have fallen.</div>';
     return;
   }
 
-  /* Combat overrides everything */
-  if (C && C.on) {
-    _safeRender(M, renderCombat,     'Combat');
-    _safeRender(S, renderCombatSide, 'CombatSide');
+  /* Combat */
+  if (typeof C !== 'undefined' && C.on) {
+    _safe(M, renderCombat,     'renderCombat');
+    _safe(S, renderCombatSide, 'renderCombatSide');
     return;
   }
 
-  /* Dialogue overrides everything */
-  if (DLG && DLG.on) {
-    _safeRender(M, renderDialogue,     'Dialogue');
-    _safeRender(S, renderDialogueSide, 'DialogueSide');
+  /* Dialogue */
+  if (typeof DLG !== 'undefined' && DLG.on) {
+    _safe(M, renderDialogue,     'renderDialogue');
+    _safe(S, renderDialogueSide, 'renderDialogueSide');
     return;
   }
 
-  /* Normal views */
-  switch (VIEW) {
-    case 'explore':
-      _safeRender(M, renderExplore,     'Explore');
-      _safeRender(S, renderExploreSide, 'ExploreSide');
-      break;
-    case 'skills':
-      _safeRender(M, renderSkills,      'Skills');
-      _safeRender(S, renderSkillsSide,  'SkillsSide');
-      break;
-    case 'inventory':
-      _safeRender(M, renderInventory,     'Inventory');
-      _safeRender(S, renderInventorySide, 'InventorySide');
-      break;
-    case 'spellbook':
-      _safeRender(M, renderSpellbook,     'Spellbook');
-      _safeRender(S, renderSpellbookSide, 'SpellbookSide');
-      break;
-    case 'quests':
-      _safeRender(M, renderQuests,     'Quests');
-      _safeRender(S, renderQuestsSide, 'QuestsSide');
-      break;
-    case 'map':
-      _safeRender(M, renderMap,     'Map');
-      _safeRender(S, renderMapSide, 'MapSide');
-      break;
-    case 'factions':
-      _safeRender(M, renderFactions,     'Factions');
-      _safeRender(S, renderFactionsSide, 'FactionsSide');
-      break;
-    default:
-      VIEW = 'explore';
-      _safeRender(M, renderExplore,     'Explore');
-      _safeRender(S, renderExploreSide, 'ExploreSide');
-  }
+  /* Normal views — map of view-name → [mainFn, sideFn] */
+  var MAP = {
+    explore:   [renderExplore,   renderExploreSide],
+    skills:    [renderSkills,    renderSkillsSide],
+    inventory: [renderInventory, renderInventorySide],
+    spellbook: [renderSpellbook, renderSpellbookSide],
+    quests:    [renderQuests,    renderQuestsSide],
+    map:       [renderMap,       renderMapSide],
+    factions:  [renderFactions,  renderFactionsSide]
+  };
+
+  var pair = MAP[VIEW] || MAP['explore'];
+  _safe(M, pair[0], pair[0] ? pair[0].name || VIEW      : VIEW);
+  _safe(S, pair[1], pair[1] ? pair[1].name || VIEW+'Side': VIEW+'Side');
 }
 
-/**
- * Call a render function and write its output to el.
- * If it throws, shows a readable error instead of a blank screen.
- */
-function _safeRender(el, fn, label) {
+/* ── SAFE WRAPPER ────────────────────── */
+function _safe(el, fn, label) {
   try {
-    el.innerHTML = fn();
+    if (typeof fn !== 'function') {
+      el.innerHTML = _errBox(
+        'Function <code>' + label + '</code> is not defined.<br>' +
+        'A script file may have failed to load — check F12 Console for red errors.'
+      );
+      return;
+    }
+    var html = fn();
+    el.innerHTML = (typeof html === 'string' && html.length > 0) ? html : '';
   } catch (e) {
-    console.error('[Aethon] Render error in ' + label + ':', e);
-    el.innerHTML = [
-      '<div style="padding:16px;color:#ff8877;font-size:12px;line-height:1.8">',
-      '<strong>⚠ Render error in ' + label + '</strong><br>',
-      e.message + '<br><br>',
-      '<small style="color:var(--mut)">Open the browser console (F12) for the full stack trace.</small>',
-      '</div>'
-    ].join('');
+    console.error('[Aethon] Error in ' + label + ':', e);
+    el.innerHTML = _errBox('<strong>' + label + '</strong>: ' + String(e.message || e));
   }
 }
 
-/* ── DEATH SCREEN ── */
+function _errBox(msg) {
+  return [
+    '<div style="margin:12px;padding:14px;color:#ff8877;font-size:12px;',
+    'line-height:1.9;border:1px solid #4a1a1a;background:#0e0505">',
+    '⚠ ' + msg,
+    '<br><small style="color:var(--mut)">Press F12 → Console to see the full error.</small>',
+    '</div>'
+  ].join('');
+}
+
+/* ── DEATH ───────────────────────────── */
 function renderDeath() {
   return [
     '<div class="death">',
-    '<div style="font-family:Georgia,serif;font-size:30px;color:#8b2020;',
-    'letter-spacing:5px;margin-bottom:14px">YOU HAVE FALLEN</div>',
+    '<div style="font-family:Georgia,serif;font-size:28px;color:#8b2020;',
+    'letter-spacing:4px;margin-bottom:12px">YOU HAVE FALLEN</div>',
     '<div style="font-family:Georgia,serif;font-style:italic;color:var(--mut);',
-    'font-size:13px;margin-bottom:24px;line-height:2">',
+    'font-size:13px;margin-bottom:22px;line-height:2">',
     'The ruins of Aethon do not mourn.<br>',
     'They have seen this many times before.<br><br>',
     'The cycle continues.',
     '</div>',
     '<button class="btn" onclick="doRespawn()" ',
-    'style="margin:0 auto;display:block;padding:12px 30px;font-size:14px">',
+    'style="margin:0 auto;display:block;padding:11px 28px;font-size:13px">',
     '⟳ Rise Again</button>',
-    '<div style="margin-top:12px;color:var(--mut);font-size:10px">',
+    '<div style="margin-top:10px;color:var(--mut);font-size:10px">',
     'Skills and equipment preserved.',
-    '</div>',
-    '</div>'
+    '</div></div>'
   ].join('');
 }

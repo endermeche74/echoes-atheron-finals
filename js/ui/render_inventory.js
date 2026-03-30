@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════
    ECHOES OF AETHON — Inventory Renderer
+   Unequipped gear shows [Equip] + [Sell]
    ════════════════════════════════════ */
 
 function renderInventory() {
@@ -14,15 +15,15 @@ function renderInventory() {
     var it = id && ITEMS[id];
     html.push(
       '<div class="eq-sl">',
-      '<div class="eq-lbl">' + sl + '</div>',
-      '<div class="' + (it ? rarC(it.rar) : '') + '" style="font-size:11px">' + (it ? it.n : '— Empty —') + '</div>',
-      id ? '<button class="btn" style="font-size:9px;padding:3px 7px;margin-top:4px" onclick="doUnequip(\'' + sl + '\')">Remove</button>' : '',
+        '<div class="eq-lbl">' + sl + '</div>',
+        '<div class="' + (it ? rarC(it.rar) : '') + '" style="font-size:11px">' + (it ? it.n : '— Empty —') + '</div>',
+        id ? '<button class="btn btn-r" style="font-size:9px;padding:2px 7px;margin-top:4px" onclick="doUnequip(\'' + sl + '\')">Remove</button>' : '',
       '</div>'
     );
   });
   html.push('</div>');
 
-  /* ── Inventory list ── */
+  /* ── Inventory ── */
   var cnts = {};
   P.inv.forEach(function (i) { cnts[i] = (cnts[i] || 0) + 1; });
   var uni = [];
@@ -31,9 +32,10 @@ function renderInventory() {
   html.push('<div class="sec">Inventory (' + P.inv.length + ')</div>');
 
   if (uni.length === 0) {
-    html.push('<div style="color:var(--mut);padding:10px">Nothing in inventory.</div>');
+    html.push('<div style="color:var(--mut);padding:10px">Nothing carried.</div>');
   } else {
     html.push('<div class="inv-grid">');
+
     uni.forEach(function (id) {
       var it   = ITEMS[id];
       if (!it) return;
@@ -50,39 +52,57 @@ function renderInventory() {
         it.critB ? '+' + Math.round(it.critB * 100) + '% Crit' : ''
       ].filter(Boolean).join(' ');
 
-      /* Action hint */
-      var actText = '';
-      if (isEq) {
-        actText = '<span style="color:var(--gold);font-size:9px">✓ Equipped</span>';
-      } else if (it.type === 'weapon' || it.type === 'armor' || it.type === 'accessory') {
-        actText = '<span style="color:#4499ff;font-size:9px">[Click to equip]</span>';
+      /* Action area */
+      var actHtml = '';
+      var isGear  = (it.type === 'weapon' || it.type === 'armor' || it.type === 'accessory');
+
+      if (isGear) {
+        if (isEq) {
+          actHtml = '<span style="color:var(--gold);font-size:9px;display:block;margin-top:4px">✓ Equipped — click to unequip</span>';
+        } else {
+          var sv2 = (typeof gearSellValue === 'function') ? gearSellValue(it) : 5;
+          actHtml = [
+            '<div style="display:flex;gap:3px;margin-top:5px">',
+              '<button class="btn btn-b" style="font-size:9px;padding:2px 7px;flex:1" ',
+                'onclick="event.stopPropagation();itemAct(\'' + id + '\')">Equip</button>',
+              '<button class="btn btn-r" style="font-size:9px;padding:2px 7px" ',
+                'onclick="event.stopPropagation();sellGearItem(\'' + id + '\')">Sell ' + sv2 + 'g</button>',
+            '</div>'
+          ].join('');
+        }
       } else if (it.type === 'consumable') {
-        actText = '<span style="color:#44ee66;font-size:9px">[Click to use]</span>';
+        actHtml = '<div style="font-size:9px;color:#44ee66;margin-top:4px">[Click to use]</div>';
       } else if (it.type === 'spellbook') {
-        actText = '<span style="color:#cc44ff;font-size:9px">[Click to learn]</span>';
+        var known = P.spells && SPELLS[it.spell] && P.spells.indexOf(it.spell) !== -1;
+        actHtml = known
+          ? '<div style="font-size:9px;color:var(--mut);margin-top:4px">Spell known</div>'
+          : '<div style="font-size:9px;color:#cc44ff;margin-top:4px">[Click to learn]</div>';
       } else if (it.type === 'misc') {
-        actText = '<span style="color:var(--gold);font-size:9px">[Sell: ' + it.val + 'g]</span>';
+        actHtml = '<div style="font-size:9px;color:var(--gold);margin-top:4px">[Click to sell: ' + (it.val || '?') + 'g]</div>';
       }
 
       html.push(
-        '<div class="icard' + (isEq ? ' eqd' : '') + '" onclick="itemAct(\'' + id + '\')">',
-        '<div style="font-size:9px;color:var(--mut);text-transform:uppercase">',
-        '<span class="' + rarC(it.rar) + '">' + rarN(it.rar) + '</span>',
-        cnt > 1 ? ' ×' + cnt : '',
-        '</div>',
-        '<div class="' + rarC(it.rar) + '" style="font-size:13px;margin:2px 0">' + it.n + '</div>',
-        stats ? '<div style="font-size:10px;color:#6a9a6a;margin-top:2px">' + stats + '</div>' : '',
-        '<div style="font-size:10px;color:var(--mut);margin-top:2px">' + (it.desc || '') + '</div>',
-        '<div style="margin-top:3px">' + actText + '</div>',
+        '<div class="icard' + (isEq ? ' eqd' : '') + '"',
+        /* Only gear toggle & consumable/spellbook/misc use the card click */
+        (isGear && !isEq) ? '' : ' onclick="itemAct(\'' + id + '\')"',
+        '>',
+          '<div style="font-size:9px;color:var(--mut);text-transform:uppercase">',
+            '<span class="' + rarC(it.rar) + '">' + rarN(it.rar) + '</span>',
+            cnt > 1 ? ' ×' + cnt : '',
+          '</div>',
+          '<div class="' + rarC(it.rar) + '" style="font-size:13px;margin:2px 0">' + it.n + '</div>',
+          stats ? '<div style="font-size:10px;color:#6a9a6a;margin-top:2px">' + stats + '</div>' : '',
+          '<div style="font-size:10px;color:var(--mut);margin-top:2px">' + (it.desc || '') + '</div>',
+          actHtml,
         '</div>'
       );
     });
+
     html.push('</div>');
   }
 
   /* Sell all misc */
-  var hasMisc = uni.some(function (id) { return ITEMS[id] && ITEMS[id].type === 'misc'; });
-  if (hasMisc) {
+  if (uni.some(function (id) { return ITEMS[id] && ITEMS[id].type === 'misc'; })) {
     html.push('<button class="btn btn-g" style="margin-top:8px" onclick="sellAll()">💰 Sell All Relics &amp; Misc</button>');
   }
 
@@ -91,15 +111,22 @@ function renderInventory() {
 
 function renderInventorySide() {
   var html = [];
-  html.push('<div class="sec">Item Rarities</div>');
+
+  html.push('<div class="sec">Rarities</div>');
   Object.keys(RAR).forEach(function (k) {
     html.push('<div style="font-size:11px;margin-bottom:4px"><span class="' + RAR[k].c + '">■ ' + RAR[k].n + '</span></div>');
   });
+
   html.push(
-    '<div style="margin-top:10px;font-size:10px;color:var(--mut);line-height:1.7">',
-    'Higher rarity items have better stats and special effects.<br><br>',
-    'Find rarer items by defeating stronger enemies in harder regions.',
+    '<div style="margin-top:10px;font-size:10px;color:var(--mut);line-height:1.8">',
+      'Gear sell prices by rarity:<br>',
+      '<span style="color:#aaa">Common: 8g</span><br>',
+      '<span style="color:#44ee66">Uncommon: 20g</span><br>',
+      '<span style="color:#4499ff">Rare: 45g</span><br>',
+      '<span style="color:#cc44ff">Epic: 100g</span><br>',
+      '<span style="color:var(--gold)">Legendary: 250g</span>',
     '</div>'
   );
+
   return html.join('');
 }

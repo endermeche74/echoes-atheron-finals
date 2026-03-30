@@ -25,7 +25,12 @@
         <span class="bv" id="mpval"></span>
       </div>
       <span id="hgold"></span>
+      <span id="htime" style="font-size:10px;color:#aabb88"></span>
       <span id="hloc"></span>
+    </div>
+    <div style="display:flex;gap:5px">
+      <button class="btn" style="font-size:10px;padding:3px 8px" onclick="saveGame()">💾 Save</button>
+      <button class="btn" style="font-size:10px;padding:3px 8px" onclick="loadGame()">📂 Load</button>
     </div>
   </header>
 
@@ -37,6 +42,7 @@
     <button class="tab"     data-v="spellbook" onclick="sv('spellbook')">📖 Spells</button>
     <button class="tab"     data-v="quests"    onclick="sv('quests')">📋 Quests</button>
     <button class="tab"     data-v="map"       onclick="sv('map')">🗺 Map</button>
+    <button class="tab"     data-v="factions"  onclick="sv('factions')">⚑ Factions</button>
   </nav>
 
   <!-- BODY -->
@@ -50,9 +56,7 @@
 
 </div>
 
-<!-- ═══════════════════════════════════════
-     DATA LAYER
-════════════════════════════════════════ -->
+<!-- ═══════════════ DATA ═══════════════ -->
 <script src="js/data/abilities.js"></script>
 <script src="js/data/spells.js"></script>
 <script src="js/data/items.js"></script>
@@ -61,21 +65,20 @@
 <script src="js/data/npcs.js"></script>
 <script src="js/data/quests.js"></script>
 
-<!-- ═══════════════════════════════════════
-     SYSTEMS LAYER
-════════════════════════════════════════ -->
+<!-- ═══════════════ SYSTEMS ═══════════ -->
 <script src="js/audio.js"></script>
 <script src="js/systems/state.js"></script>
+<script src="js/systems/time.js"></script>
+<script src="js/systems/reputation.js"></script>
 <script src="js/systems/skills.js"></script>
 <script src="js/systems/combat.js"></script>
 <script src="js/systems/dialogue.js"></script>
 <script src="js/systems/inventory.js"></script>
 <script src="js/systems/movement.js"></script>
 <script src="js/systems/quests.js"></script>
+<script src="js/systems/save.js"></script>
 
-<!-- ═══════════════════════════════════════
-     UI / RENDER LAYER
-════════════════════════════════════════ -->
+<!-- ═══════════════ UI ════════════════ -->
 <script src="js/ui/render_explore.js"></script>
 <script src="js/ui/render_combat.js"></script>
 <script src="js/ui/render_dialogue.js"></script>
@@ -84,11 +87,10 @@
 <script src="js/ui/render_spells.js"></script>
 <script src="js/ui/render_quests.js"></script>
 <script src="js/ui/render_map.js"></script>
+<script src="js/ui/render_factions.js"></script>
 <script src="js/ui/render.js"></script>
 
-<!-- ═══════════════════════════════════════
-     ENTRY POINT
-════════════════════════════════════════ -->
+<!-- ═══════════════ ENTRY ════════════ -->
 <script src="main.js"></script>
 
 </body>

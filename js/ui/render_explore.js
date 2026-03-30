@@ -1,108 +1,122 @@
 /* ═══════════════════════════════════════
-   ECHOES OF AETHON — Main Render Dispatcher
+   ECHOES OF AETHON — Explore Renderer
    ════════════════════════════════════ */
 
-/**
- * Switch the active tab/view.
- * Always clears main + sinfo before rendering.
- */
-function sv(v) {
-  VIEW = v;
-  sfxClick();
+function renderExplore() {
+  var a      = currentArea();
+  var seenKey = a.id + '_seen';
+  var isFirst = !G.discovered[seenKey];
+  if (isFirst) G.discovered[seenKey] = true;
 
-  /* Sync tab highlight */
-  document.querySelectorAll('.tab').forEach(function (t) {
-    t.classList.toggle('on', t.dataset.v === v);
+  var desc = (isFirst && a.first) ? a.first : a.desc;
+  var html = [];
+
+  /* Title */
+  html.push('<div class="page-title">' + a.name + '</div>');
+  html.push('<div class="page-sub">'   + a.sub  + '</div>');
+
+  /* Description */
+  html.push('<div class="desc">' + desc + '</div>');
+
+  /* On first visit also show the full desc as lore if first text differs */
+  if (isFirst && a.first && a.first !== a.desc) {
+    html.push('<div class="lorebox">' + a.desc + '</div>');
+  }
+
+  /* Action buttons */
+  html.push('<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">');
+  if (a.searchable) {
+    html.push('<button class="btn" onclick="doExplore()">⚔ Search Area</button>');
+  }
+  html.push('<button class="btn btn-g" onclick="doRest()">💤 Rest here (25% ambush chance)</button>');
+  html.push('</div>');
+
+  /* NPCs */
+  if (a.npcs && a.npcs.length) {
+    html.push('<div class="sec">People Here</div>');
+    a.npcs.forEach(function (id) {
+      var npc = NPCS[id];
+      if (!npc) return;
+      var badge = '';
+      if      (npc.faction === 'shade')   badge = '<span class="npc-faction f-shade">Shade Company</span>';
+      else if (npc.faction === 'drowned') badge = '<span class="npc-faction f-drowned">The Drowned</span>';
+      else if (npc.faction === 'ash')     badge = '<span class="npc-faction f-ash">Ash-folk</span>';
+      else if (npc.faction === 'warden')  badge = '<span class="npc-faction f-warden">Stone Warden</span>';
+      html.push(
+        '<div class="npc-card" onclick="openDlg(\'' + id + '\')">',
+        '<div>',
+        '<div style="font-size:13px">' + npc.n + '</div>',
+        '<div style="font-size:10px;color:var(--mut)">' + npc.title + '</div>',
+        badge,
+        '</div>',
+        '<span style="color:var(--mut)">▶</span>',
+        '</div>'
+      );
+    });
+  }
+
+  /* Movement */
+  html.push('<div class="sec">Where to Go</div>');
+  html.push('<div class="move-grid">');
+  (a.connections || []).forEach(function (tid) {
+    var ta   = AREAS[tid];
+    if (!ta) return;
+    var unlk = areaUnlocked(tid);
+    var isNew = unlk && !G.discovered[tid];
+    html.push(
+      '<div class="move-btn' + (unlk ? '' : ' move-locked') + '"',
+      unlk ? ' onclick="doTravel(\'' + tid + '\')"' : '',
+      '>',
+      '<div class="move-name">' + ta.name + '</div>',
+      '<div class="move-sub">'  + ta.sub  + '</div>',
+      !unlk ? '<div class="move-req">🔒 ' + ta.reqDesc + '</div>' : '',
+      isNew  ? '<div class="move-new">★ Unexplored</div>' : '',
+      '</div>'
+    );
   });
+  html.push('</div>');
 
-  render();
+  return html.join('');
 }
 
-/**
- * Master render — routes to correct sub-renderer.
- * Always clears containers first to prevent stale content.
- */
-function render() {
-  updHdr();
+function renderExploreSide() {
+  var a    = currentArea();
+  var html = [];
 
-  var M = document.getElementById('main');
-  var S = document.getElementById('sinfo');
-
-  /* Clear both panels before every render */
-  M.innerHTML = '';
-  S.innerHTML = '';
-
-  /* Death screen */
-  if (P.hp <= 0) {
-    M.innerHTML = renderDeath();
-    return;
+  /* Active quests summary */
+  html.push('<div class="sec">Active Quests</div>');
+  var active = Object.keys(QUESTS).filter(function (qid) { return questActive(qid); });
+  if (active.length === 0) {
+    html.push('<div style="font-size:11px;color:var(--mut)">No active quests.</div>');
+  } else {
+    active.forEach(function (qid) {
+      var q  = QUESTS[qid];
+      var qs = questState(qid);
+      html.push(
+        '<div style="margin-bottom:8px">',
+        '<div style="font-size:11px;color:var(--gold)">' + q.name + '</div>',
+        '<div style="font-size:10px;color:var(--mut);margin-top:2px;line-height:1.5">' + q.stages[qs.stage] + '</div>',
+        '</div>'
+      );
+    });
   }
 
-  /* Combat overrides all views */
-  if (C.on) {
-    M.innerHTML = renderCombat();
-    S.innerHTML = renderCombatSide();
-    return;
+  /* Enemies in this area */
+  html.push('<div class="sec">Enemies Here</div>');
+  if (!a.enemies || a.enemies.length === 0) {
+    html.push('<div style="font-size:10px;color:var(--mut)">No enemies in this area.</div>');
+  } else {
+    a.enemies.forEach(function (eid) {
+      var e = ENEMIES[eid];
+      if (!e) return;
+      html.push(
+        '<div style="padding:4px 0;border-bottom:1px solid var(--brd2)">',
+        '<div style="color:#ff6655;font-size:11px">' + e.n + '</div>',
+        '<div style="font-size:9px;color:var(--dim);margin-top:1px">AC ' + e.ac + ' · HP ' + e.maxHp + '</div>',
+        '</div>'
+      );
+    });
   }
 
-  /* Dialogue overrides all views */
-  if (DLG.on) {
-    M.innerHTML = renderDialogue();
-    S.innerHTML = renderDialogueSide();
-    return;
-  }
-
-  /* Normal tab views */
-  switch (VIEW) {
-    case 'explore':
-      M.innerHTML = renderExplore();
-      S.innerHTML = renderExploreSide();
-      break;
-    case 'skills':
-      M.innerHTML = renderSkills();
-      S.innerHTML = renderSkillsSide();
-      break;
-    case 'inventory':
-      M.innerHTML = renderInventory();
-      S.innerHTML = renderInventorySide();
-      break;
-    case 'spellbook':
-      M.innerHTML = renderSpellbook();
-      S.innerHTML = renderSpellbookSide();
-      break;
-    case 'quests':
-      M.innerHTML = renderQuests();
-      S.innerHTML = renderQuestsSide();
-      break;
-    case 'map':
-      M.innerHTML = renderMap();
-      S.innerHTML = renderMapSide();
-      break;
-    default:
-      M.innerHTML = renderExplore();
-      S.innerHTML = renderExploreSide();
-  }
-}
-
-/* ── DEATH SCREEN ────────────────────────── */
-function renderDeath() {
-  return [
-    '<div class="death">',
-    '<div style="font-family:Georgia,serif;font-size:30px;color:#8b2020;',
-    'letter-spacing:5px;margin-bottom:14px">YOU HAVE FALLEN</div>',
-    '<div style="font-family:Georgia,serif;font-style:italic;color:var(--mut);',
-    'font-size:13px;margin-bottom:24px;line-height:2">',
-    'The ruins of Aethon do not mourn.<br>',
-    'They have seen this many times before.<br>',
-    'They will see it many times again.<br><br>',
-    'The cycle continues.',
-    '</div>',
-    '<button class="btn" onclick="doRespawn()" ',
-    'style="margin:0 auto;display:block;padding:12px 30px;font-size:14px">',
-    '⟳ Rise Again</button>',
-    '<div style="margin-top:12px;color:var(--mut);font-size:10px">',
-    'Skills and equipment preserved. You return to Verath\'s Gate.',
-    '</div>',
-    '</div>'
-  ].join('');
+  return html.join('');
 }

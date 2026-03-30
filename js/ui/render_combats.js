@@ -8,7 +8,7 @@ function renderCombat() {
   var pp  = Math.max(0, P.hp  / P.maxHp * 100);
   var html = [];
 
-  /* ── Enemy panel ── */
+  /* Enemy status tags */
   var eTags = '';
   if (C.ided) {
     if (e.weak && e.weak.length) e.weak.forEach(function (w) { eTags += '<span class="chtag tag-g">Weak: ' + w + '</span>'; });
@@ -21,6 +21,7 @@ function renderCombat() {
     ? '<span style="font-size:10px;color:var(--mut)">No weaknesses found</span>'
     : '<span style="font-size:10px;color:var(--mut)">◈ Use Identify to reveal weaknesses</span>';
 
+  /* Enemy panel */
   html.push(
     '<div class="cbody">',
     '<div class="combatant">',
@@ -37,7 +38,7 @@ function renderCombat() {
     '</div>'
   );
 
-  /* ── Player panel ── */
+  /* Player status tags */
   var pTags = '';
   if (C.defending) pTags += '<span class="chtag tag-b">Defending</span>';
   if (C.shld)      pTags += '<span class="chtag tag-b">Shield(' + C.sa + ')</span>';
@@ -45,6 +46,7 @@ function renderCombat() {
   if (C.evade)     pTags += '<span class="chtag tag-y">Evading</span>';
   if (!pTags)      pTags  = '<span style="font-size:10px;color:var(--mut)">No active effects</span>';
 
+  /* Player panel */
   html.push(
     '<div class="combatant">',
       '<div>',
@@ -59,7 +61,7 @@ function renderCombat() {
     '</div>'
   );
 
-  /* ── Physical abilities ── */
+  /* Physical abilities */
   var physHtml = '';
   SKILL_ORDER.forEach(function (sk) {
     var lv = sklLv(sk);
@@ -71,8 +73,7 @@ function renderCombat() {
         '<button class="abt"' + (ok ? '' : ' disabled') +
         ' onclick="doAbility(\'' + ab.id + '\')">' +
         (ab.icon || '⚔') + ' ' + ab.name +
-        '<span class="abt-cost">' + (ab.mp ? ab.mp + 'mp' : 'free') + '</span>' +
-        '</button>';
+        '<span class="abt-cost">' + (ab.mp ? ab.mp + 'mp' : 'free') + '</span></button>';
     });
   });
 
@@ -85,21 +86,19 @@ function renderCombat() {
     '</div>'
   );
 
-  /* ── Magic & support abilities ── */
+  /* Magic & support */
   var magHtml = '';
   SKILL_ORDER.forEach(function (sk) {
     var lv = sklLv(sk);
     SKILLMETA[sk].abilIds.forEach(function (aid) {
       var ab = ABIL[aid];
-      if (!ab || ab.lv > lv) return;
-      if (ab.typ === 'phy') return; /* already in physical */
+      if (!ab || ab.lv > lv || ab.typ === 'phy') return;
       var ok = P.mp >= ab.mp;
       magHtml +=
         '<button class="abt"' + (ok ? '' : ' disabled') +
         ' onclick="doAbility(\'' + ab.id + '\')">' +
         (ab.icon || '🔥') + ' ' + ab.name +
-        '<span class="abt-cost">' + (ab.mp ? ab.mp + 'mp' : 'free') + '</span>' +
-        '</button>';
+        '<span class="abt-cost">' + (ab.mp ? ab.mp + 'mp' : 'free') + '</span></button>';
     });
   });
 
@@ -112,7 +111,7 @@ function renderCombat() {
     '</div>'
   );
 
-  /* ── Spells ── */
+  /* Spells */
   if (P.spells.length > 0) {
     var spellHtml = '';
     P.spells.forEach(function (sid) {
@@ -122,9 +121,7 @@ function renderCombat() {
       spellHtml +=
         '<button class="abt abt-sp"' + (ok ? '' : ' disabled') +
         ' onclick="castSpell(\'' + sid + '\')">' +
-        sp.name +
-        '<span class="abt-cost">' + sp.mp + 'mp</span>' +
-        '</button>';
+        sp.name + '<span class="abt-cost">' + sp.mp + 'mp</span></button>';
     });
     html.push(
       '<div class="act-section">',
@@ -134,7 +131,7 @@ function renderCombat() {
     );
   }
 
-  /* ── Items ── */
+  /* Items */
   var usedIds  = {};
   var itemHtml = '';
   P.inv.forEach(function (iid) {
@@ -144,8 +141,7 @@ function renderCombat() {
     var label = it.eff === 'escape' ? 'FLEE' : it.eff === 'cure' ? 'CURE' : '+' + (it.amt || '');
     itemHtml +=
       '<button class="abt abt-it" onclick="useCombatItem(\'' + iid + '\')">' +
-      it.n + '<span class="abt-cost">' + label + '</span>' +
-      '</button>';
+      it.n + '<span class="abt-cost">' + label + '</span></button>';
   });
 
   html.push(
@@ -154,15 +150,11 @@ function renderCombat() {
       '<div class="act-grid">',
         itemHtml || '<span style="font-size:11px;color:var(--mut)">No consumables in inventory.</span>',
       '</div>',
-    '</div>'
-  );
-
-  /* ── Flee ── */
-  html.push(
+    '</div>',
     '<div style="margin-top:4px">',
       '<button class="btn btn-r" onclick="doFlee()">↩ Attempt Flee</button>',
     '</div>',
-    '</div>' /* end .cbody */
+    '</div>'
   );
 
   return html.join('');
@@ -170,22 +162,15 @@ function renderCombat() {
 
 function renderCombatSide() {
   var rows = C.clog.slice(0, 16).map(function (l) {
-    var col = l.t === 'p'    ? '#c0ccf0'
-            : l.t === 'e'    ? '#ff7766'
-            : l.t === 'h'    ? '#55ee88'
-            : l.t === 'dice' ? '#ffee44'
-            :                  '#505870';
+    var col = l.t === 'p' ? '#c0ccf0' : l.t === 'e' ? '#ff7766' : l.t === 'h' ? '#55ee88' : l.t === 'dice' ? '#ffee44' : '#505870';
     return '<div style="color:' + col + ';padding:1px 0;font-size:11px;line-height:1.8">' + l.m + '</div>';
   }).join('');
 
   return [
     '<div class="sec">Battle Log</div>',
-    rows,
+    rows || '<div style="color:var(--mut);font-size:11px">No actions yet.</div>',
     '<div style="margin-top:8px;font-size:10px;color:var(--mut);line-height:1.6">',
-    'd20 roll + skill mod vs enemy AC.<br>',
-    'Nat 20 = Critical Hit (×2).<br>',
-    'Nat 1 = Critical Miss.<br>',
-    'Weakness = ×1.5 damage.',
+      'd20 + skill mod vs AC.<br>Nat 20 = Critical ×2.<br>Nat 1 = Miss.<br>Weakness = ×1.5 dmg.',
     '</div>'
   ].join('');
 }

@@ -50,12 +50,12 @@ function render() {
 
   /* Normal views — map of view-name → [mainFn, sideFn] */
   var MAP = {
-    explore:   [renderExplore,   renderExploreSide],
-    skills:    [renderSkills,    renderSkillsSide],
-    inventory: [renderInventory, renderInventorySide],
-    spellbook: [renderSpellbook, renderSpellbookSide],
-    quests:    [renderQuests,    renderQuestsSide],
-    map:       [renderMap,       renderMapSide],
+    explore:   [render_explore,   renderExploreSide],
+    skills:    [render_skills,    renderSkillsSide],
+    inventory: [render_inventory, renderInventorySide],
+    spellbook: [render_spells, renderSpellbookSide],
+    quests:    [render_quest,    renderQuestsSide],
+    map:       [render_maps,       renderMapSide],
     factions:  [renderFactions,  renderFactionsSide]
   };
 

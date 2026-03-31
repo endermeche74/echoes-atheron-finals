@@ -255,6 +255,8 @@ function doVictory() {
 
   if (typeof window._wolfKillHook === 'function') window._wolfKillHook(e.n);
 
+  if (typeof autosave === 'function') autosave();
+
   C.on = false;
   recalc();
   checkQuestProgress();

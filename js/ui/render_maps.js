@@ -15,7 +15,7 @@ var MAP_REGIONS = [
   { key:'keep',       label:"The Runic Keep",        areas:['keep_approach','keep_gate','keep_hall','keep_depths'] }
 ];
 
-function render_maps() {
+function renderMap() {
   var html = [];
 
   /* Build set of areas adjacent to discovered ones */

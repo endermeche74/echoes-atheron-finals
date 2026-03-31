@@ -5,7 +5,7 @@
    missing instead of blank screen.
    ════════════════════════════════════ */
 
-function render_explore() {
+function renderExplore() {
 
   /* ── Guard: critical data must exist ── */
   if (typeof AREAS === 'undefined') {

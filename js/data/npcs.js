@@ -384,4 +384,9 @@ var NPCS = {
       teach:{ t:"It spends an hour walking you through the structural grammar of all three scripts. You understand perhaps three percent of what you see. This is, it tells you, better than most manage.",c:[]}
     }
   }
+
+  
+  
+
+
 };

@@ -253,6 +253,8 @@ function doVictory() {
   /* Advance time after combat */
   if (typeof advanceTime === 'function') advanceTime('combat');
 
+  if (typeof window._wolfKillHook === 'function') window._wolfKillHook(e.n);
+
   C.on = false;
   recalc();
   checkQuestProgress();

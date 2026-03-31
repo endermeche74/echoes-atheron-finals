@@ -160,9 +160,10 @@ html, body {
   min-width: 0;
 }
 
+
 #side {
   display: grid;
-  grid-template-rows: 1fr 160px;
+  grid-template-rows: 1fr 240px;   /* ← was 160px */
   gap: 3px;
   min-height: 0;
 }
@@ -180,8 +181,8 @@ html, body {
   overflow-y: auto;
   padding: 8px 12px;
   font-size: 11px;
+  line-height: 1.85;   /* ← slightly more breathing room per line */
 }
-
 /* ── TYPOGRAPHY HELPERS ─────────────────── */
 .page-title {
   font-family: Georgia, serif;

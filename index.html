@@ -10,7 +10,6 @@
 
 <div id="app">
 
-  <!-- HEADER -->
   <header id="hdr">
     <div class="logo">⚔ Echoes of Aethon</div>
     <div class="hstats">
@@ -34,18 +33,16 @@
     </div>
   </header>
 
-  <!-- TABS -->
   <nav id="tabs">
-    <button class="tab on"  data-v="explore"   onclick="sv('explore')">⚔ Explore</button>
-    <button class="tab"     data-v="skills"    onclick="sv('skills')">🎓 Skills</button>
-    <button class="tab"     data-v="inventory" onclick="sv('inventory')">🎒 Items</button>
-    <button class="tab"     data-v="spellbook" onclick="sv('spellbook')">📖 Spells</button>
-    <button class="tab"     data-v="quests"    onclick="sv('quests')">📋 Quests</button>
-    <button class="tab"     data-v="map"       onclick="sv('map')">🗺 Map</button>
-    <button class="tab"     data-v="factions"  onclick="sv('factions')">⚑ Factions</button>
+    <button class="tab on" data-v="explore"   onclick="sv('explore')">⚔ Explore</button>
+    <button class="tab"    data-v="skills"    onclick="sv('skills')">🎓 Skills</button>
+    <button class="tab"    data-v="inventory" onclick="sv('inventory')">🎒 Items</button>
+    <button class="tab"    data-v="spellbook" onclick="sv('spellbook')">📖 Spells</button>
+    <button class="tab"    data-v="quests"    onclick="sv('quests')">📋 Quests</button>
+    <button class="tab"    data-v="map"       onclick="sv('map')">🗺 Map</button>
+    <button class="tab"    data-v="factions"  onclick="sv('factions')">⚑ Factions</button>
   </nav>
 
-  <!-- BODY -->
   <div id="body">
     <main id="main"></main>
     <aside id="side">
@@ -56,7 +53,7 @@
 
 </div>
 
-<!-- ═══════════════ DATA ═══════════════ -->
+<!-- DATA — order matters -->
 <script src="js/data/abilities.js"></script>
 <script src="js/data/spells.js"></script>
 <script src="js/data/items.js"></script>
@@ -65,32 +62,32 @@
 <script src="js/data/npcs.js"></script>
 <script src="js/data/quests.js"></script>
 
-<!-- ═══════════════ SYSTEMS ═══════════ -->
+<!-- SYSTEMS — order matters -->
 <script src="js/audio.js"></script>
 <script src="js/systems/state.js"></script>
 <script src="js/systems/time.js"></script>
-<script src="js/systems/reputation.js"></script>
+<script src="js/systems/reputations.js"></script>
 <script src="js/systems/skills.js"></script>
 <script src="js/systems/combat.js"></script>
 <script src="js/systems/dialogue.js"></script>
 <script src="js/systems/inventory.js"></script>
-<script src="js/systems/movement.js"></script>
+<script src="js/systems/movements.js"></script>
 <script src="js/systems/quests.js"></script>
 <script src="js/systems/save.js"></script>
 
-<!-- ═══════════════ UI ════════════════ -->
+<!-- UI — order matters, render.js must be last -->
 <script src="js/ui/render_explore.js"></script>
-<script src="js/ui/render_combat.js"></script>
-<script src="js/ui/render_dialogue.js"></script>
+<script src="js/ui/render_combats.js"></script>
+<script src="js/ui/render_dialogues.js"></script>
 <script src="js/ui/render_inventory.js"></script>
 <script src="js/ui/render_skills.js"></script>
 <script src="js/ui/render_spells.js"></script>
 <script src="js/ui/render_quests.js"></script>
-<script src="js/ui/render_map.js"></script>
+<script src="js/ui/render_maps.js"></script>
 <script src="js/ui/render_factions.js"></script>
 <script src="js/ui/render.js"></script>
 
-<!-- ═══════════════ ENTRY ════════════ -->
+<!-- ENTRY -->
 <script src="main.js"></script>
 
 </body>

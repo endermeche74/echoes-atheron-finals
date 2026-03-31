@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Aethon File Checker</title>
+<style>
+  body { background:#07090d; color:#d8e0f0; font-family:monospace; font-size:13px; padding:20px; }
+  h2   { color:#ffaa00; margin-bottom:16px; }
+  .ok  { color:#44ee66; }
+  .err { color:#ff6655; }
+  .row { margin:3px 0; }
+</style>
+</head>
+<body>
+<h2>⚔ Echoes of Aethon — File Diagnostic</h2>
+<div id="out">Checking…</div>
+<script>
+var FILES = [
+  /* CSS */
+  'css/style.css',
+  /* DATA */
+  'js/data/abilities.js',
+  'js/data/spells.js',
+  'js/data/items.js',
+  'js/data/enemies.js',
+  'js/data/areas.js',
+  'js/data/npcs.js',
+  'js/data/quests.js',
+  /* SYSTEMS */
+  'js/audio.js',
+  'js/systems/state.js',
+  'js/systems/time.js',
+  'js/systems/reputation.js',
+  'js/systems/skills.js',
+  'js/systems/combat.js',
+  'js/systems/dialogue.js',
+  'js/systems/inventory.js',
+  'js/systems/movement.js',
+  'js/systems/quests.js',
+  'js/systems/save.js',
+  /* UI */
+  'js/ui/render.js',
+  'js/ui/render_explore.js',
+  'js/ui/render_combat.js',
+  'js/ui/render_dialogue.js',
+  'js/ui/render_inventory.js',
+  'js/ui/render_skills.js',
+  'js/ui/render_spells.js',
+  'js/ui/render_quests.js',
+  'js/ui/render_map.js',
+  'js/ui/render_factions.js',
+  /* ENTRY */
+  'main.js'
+];
+
+var out  = document.getElementById('out');
+var html = '';
+var pending = FILES.length;
+
+FILES.forEach(function(f) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('HEAD', f, true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    var ok = xhr.status === 200 || xhr.status === 304;
+    html += '<div class="row ' + (ok ? 'ok' : 'err') + '">' +
+            (ok ? '✓' : '✗ MISSING') + '  ' + f + '</div>';
+    pending--;
+    if (pending === 0) {
+      out.innerHTML = html;
+    }
+  };
+  xhr.send();
+});
+</script>
+</body>
+</html>

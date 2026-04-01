@@ -13,9 +13,9 @@ const Input = (function() {
     // === KEY MAPPINGS ===
     const ACTIONS = {
         // Movement
-        UP:    ['w', 'W', 'ArrowUp'],
+        UP:    ['z', 'Z', 'ArrowUp'],
         DOWN:  ['s', 'S', 'ArrowDown'],
-        LEFT:  ['a', 'A', 'ArrowLeft'],
+        LEFT:  ['q', 'Q', 'ArrowLeft'],
         RIGHT: ['d', 'D', 'ArrowRight'],
         
         // Actions

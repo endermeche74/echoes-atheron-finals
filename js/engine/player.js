@@ -2,7 +2,7 @@
  * player.js — Player Entity
  * Handles: position, movement, collision, animation, rendering
  *************************************************************/
-/*
+
 const Player = (function() {
     const TILE = 16;
     const MOVE_SPEED = 80;  // pixels per second
@@ -26,8 +26,10 @@ const Player = (function() {
     // === SYNC WITH GAME STATE ===
     function syncFromState() {
         // Get spawn point from current area
-        if (typeof state !== 'undefined' && typeof Maps !== 'undefined') {
-            const map = Maps.get(state.area);
+        const areaId = (typeof state !== 'undefined' && state.area) ? state.area : 'verath_arch';
+        
+        if (typeof Maps !== 'undefined') {
+            const map = Maps.get(areaId);
             if (map && map.playerSpawn) {
                 tx = map.playerSpawn.x;
                 ty = map.playerSpawn.y;
@@ -39,6 +41,16 @@ const Player = (function() {
             x = tx * TILE;
             y = ty * TILE;
         }
+        
+        // Check for pending spawn from transition
+        if (typeof Tilemap !== 'undefined' && Tilemap._pendingSpawn) {
+            tx = Tilemap._pendingSpawn.x;
+            ty = Tilemap._pendingSpawn.y;
+            x = tx * TILE;
+            y = ty * TILE;
+            Tilemap._pendingSpawn = null;
+        }
+        
         console.log(`[Player] Synced to (${tx}, ${ty})`);
     }
     
@@ -291,4 +303,4 @@ const Player = (function() {
             y = ty * TILE;
         }
     };
-})();*/
+})();

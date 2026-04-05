@@ -6,7 +6,7 @@
  * 1. Procedural (default) - draws sprites with canvas primitives
  * 2. Spritesheet - loads from image files (future)
  *************************************************************/
-
+/*
 const Sprites = (function() {
     const TILE = 16;
     
@@ -284,4 +284,4 @@ const Sprites = (function() {
         listSprites: () => Object.keys(sprites),
         getCache: () => sheetCache
     };
-})();
+})();*/

@@ -2,7 +2,7 @@
  * tilemap.js — Tilemap Renderer & Collision
  * Handles: tile rendering, collision detection, entity placement
  *************************************************************/
-
+/*
 const Tilemap = (function() {
     const TILE = 16;
     
@@ -481,3 +481,4 @@ const Tilemap = (function() {
         TILES
     };
 })();
+*/

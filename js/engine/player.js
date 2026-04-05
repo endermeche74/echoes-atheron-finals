@@ -2,7 +2,7 @@
  * player.js — Player Entity
  * Handles: position, movement, collision, animation, rendering
  *************************************************************/
-
+/*
 const Player = (function() {
     const TILE = 16;
     const MOVE_SPEED = 80;  // pixels per second
@@ -291,4 +291,4 @@ const Player = (function() {
             y = ty * TILE;
         }
     };
-})();
+})();*/

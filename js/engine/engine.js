@@ -186,6 +186,12 @@ const Engine = (function() {
             requestAnimationFrame(gameLoop);
         }
         
+        // Load initial area
+        if (typeof Tilemap !== 'undefined') {
+            const startArea = (typeof state !== 'undefined' && state.area) ? state.area : 'verath_arch';
+            Tilemap.loadArea(startArea);
+        }
+        
         // Initialize player position from current area
         if (typeof Player !== 'undefined') {
             Player.syncFromState();

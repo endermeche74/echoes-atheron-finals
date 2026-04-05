@@ -5,8 +5,8 @@
 
 (function() {
     
-    if (typeof Audio === 'undefined' || !Audio.playSFX) {
-        console.warn('[AudioIntegration] Audio not found');
+    if (typeof GameAudio === 'undefined' || !GameAudio.playSFX) {
+        console.warn('[AudioIntegration] GameAudio not found');
         return;
     }
     
@@ -41,8 +41,8 @@
         const orig = Tilemap.loadArea;
         Tilemap.loadArea = function(areaId) {
             orig(areaId);
-            Audio.setAmbient(AREA_AMBIENCE[areaId] || null);
-            Audio.playSFX('door');
+            GameAudio.setAmbient(AREA_AMBIENCE[areaId] || null);
+            GameAudio.playSFX('door');
         };
     }
     
@@ -65,7 +65,7 @@
                         else if (tile === 5) type = 'grass';
                         else if (tile === 7) type = 'water';
                     }
-                    Audio.playSFX('footstep_' + type);
+                    GameAudio.playSFX('footstep_' + type);
                 }
             }
         };
@@ -75,7 +75,7 @@
         if (origOnHit) {
             Player.onHit = function(dmg, crit) {
                 origOnHit(dmg, crit);
-                Audio.playSFX(crit ? 'hit_crit' : 'hurt');
+                GameAudio.playSFX(crit ? 'hit_crit' : 'hurt');
             };
         }
         
@@ -83,7 +83,7 @@
         if (origOnHeal) {
             Player.onHeal = function(amt) {
                 origOnHeal(amt);
-                Audio.playSFX('heal');
+                GameAudio.playSFX('heal');
             };
         }
         
@@ -91,7 +91,7 @@
         if (origOnLevelUp) {
             Player.onLevelUp = function() {
                 origOnLevelUp();
-                Audio.playSFX('levelup');
+                GameAudio.playSFX('levelup');
             };
         }
     }
@@ -101,24 +101,24 @@
         const origStart = CombatCanvas.start;
         CombatCanvas.start = function(data) {
             origStart(data);
-            Audio.playMusic(data.boss ? 'boss' : 'combat');
+            GameAudio.playMusic(data.boss ? 'boss' : 'combat');
         };
         
         const origEnd = CombatCanvas.end;
         CombatCanvas.end = function(victory) {
             origEnd(victory);
-            Audio.playMusic('exploration');
-            Audio.playSFX(victory ? 'levelup' : 'death');
+            GameAudio.playMusic('exploration');
+            GameAudio.playSFX(victory ? 'levelup' : 'death');
         };
         
         const origInput = CombatCanvas.handleInput;
         CombatCanvas.handleInput = function(key) {
             if (key === 'up' || key === 'down' || key === 'left' || key === 'right') {
-                Audio.playSFX('menu_move');
+                GameAudio.playSFX('menu_move');
             } else if (key === 'confirm') {
-                Audio.playSFX('menu_select');
+                GameAudio.playSFX('menu_select');
             } else if (key === 'cancel') {
-                Audio.playSFX('menu_cancel');
+                GameAudio.playSFX('menu_cancel');
             }
             origInput(key);
         };
@@ -129,30 +129,30 @@
         const origPlayerAttack = CombatEffects.playerAttack;
         CombatEffects.playerAttack = function(x, y, dmg, crit) {
             origPlayerAttack(x, y, dmg, crit);
-            Audio.playSFX(crit ? 'hit_crit' : 'hit');
+            GameAudio.playSFX(crit ? 'hit_crit' : 'hit');
         };
         
         const origPlayerMiss = CombatEffects.playerMiss;
         CombatEffects.playerMiss = function(x, y) {
             origPlayerMiss(x, y);
-            Audio.playSFX('miss');
+            GameAudio.playSFX('miss');
         };
         
         const origSpellCast = CombatEffects.spellCast;
         CombatEffects.spellCast = function(x, y, color) {
             origSpellCast(x, y, color);
-            Audio.playSFX('magic');
+            GameAudio.playSFX('magic');
         };
         
         const origGainGold = CombatEffects.gainGold;
         CombatEffects.gainGold = function(x, y, amt) {
             origGainGold(x, y, amt);
-            Audio.playSFX('coin');
+            GameAudio.playSFX('coin');
         };
     }
     
     // Start exploration music
-    setTimeout(() => Audio.playMusic('exploration'), 500);
+    setTimeout(() => GameAudio.playMusic('exploration'), 500);
     
     console.log('[AudioIntegration] Ready');
     

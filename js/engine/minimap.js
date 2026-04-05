@@ -23,11 +23,19 @@ const Minimap = (function() {
         if (!enabled) return;
         if (typeof Tilemap === 'undefined' || typeof Player === 'undefined') return;
         
-        const map = Tilemap.getCurrentMap();
-        if (!map) return;
+        // Get current area - try multiple methods
+        let map = null;
+        let mapW = 20, mapH = 15;
         
-        const mapW = map.width || 20;
-        const mapH = map.height || 15;
+        if (Tilemap.getCurrentArea && typeof Maps !== 'undefined') {
+            const areaId = Tilemap.getCurrentArea();
+            if (areaId) map = Maps.get(areaId);
+        }
+        
+        if (map) {
+            mapW = map.width || 20;
+            mapH = map.height || 15;
+        }
         
         const px = Player.getTileX();
         const py = Player.getTileY();
@@ -46,25 +54,27 @@ const Minimap = (function() {
         ctx.fillRect(mx - 2, my - 2, size + 4, size + 4);
         
         // Tiles
-        for (let ty = 0; ty < viewTiles && startY + ty < mapH; ty++) {
-            for (let tx = 0; tx < viewTiles && startX + tx < mapW; tx++) {
-                const tile = Tilemap.getTile(startX + tx, startY + ty);
-                let color = '#222';
-                
-                if (tile === 0) color = '#111'; // void
-                else if (tile === 1) color = '#555'; // floor
-                else if (tile === 2 || tile === 3) color = '#333'; // wall
-                else if (tile >= 4 && tile <= 6) color = '#4a4'; // dirt/grass/path
-                else if (tile === 7) color = '#46a'; // water
-                else if (tile >= 20 && tile <= 25) color = '#664'; // exits
-                
-                ctx.fillStyle = color;
-                ctx.fillRect(mx + tx * scale, my + ty * scale, scale, scale);
+        if (Tilemap.getTile) {
+            for (let ty = 0; ty < viewTiles && startY + ty < mapH; ty++) {
+                for (let tx = 0; tx < viewTiles && startX + tx < mapW; tx++) {
+                    const tile = Tilemap.getTile(startX + tx, startY + ty);
+                    let color = '#222';
+                    
+                    if (tile === 0) color = '#111'; // void
+                    else if (tile === 1) color = '#555'; // floor
+                    else if (tile === 2 || tile === 3) color = '#333'; // wall
+                    else if (tile >= 4 && tile <= 6) color = '#4a4'; // dirt/grass/path
+                    else if (tile === 7) color = '#46a'; // water
+                    else if (tile >= 20 && tile <= 25) color = '#664'; // exits
+                    
+                    ctx.fillStyle = color;
+                    ctx.fillRect(mx + tx * scale, my + ty * scale, scale, scale);
+                }
             }
         }
         
         // Entities
-        const entities = Tilemap.getEntities ? Tilemap.getEntities() : [];
+        const entities = (Tilemap.getEntities ? Tilemap.getEntities() : []) || [];
         for (const e of entities) {
             const ex = e.x - startX;
             const ey = e.y - startY;

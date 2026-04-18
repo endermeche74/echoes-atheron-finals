@@ -321,20 +321,21 @@ const Engine = (function() {
             areaName = P.area.replace(/_/g, ' ').toUpperCase();
         }
 
-        ctx.fillStyle = PALETTE.uiBg + 'cc';
-        ctx.fillRect(4, 4, 130, 18);
+        // Zone name — top left
+        ctx.fillStyle = 'rgba(21, 19, 24, 0.8)';
+        ctx.fillRect(4, 4, 150, 24);
         ctx.strokeStyle = PALETTE.uiBorder;
-        ctx.strokeRect(4, 4, 130, 18);
+        ctx.strokeRect(4, 4, 150, 24);
         ctx.fillStyle = PALETTE.uiText;
-        ctx.font = '10px monospace';
-        ctx.fillText(areaName, 8, 16);
+        ctx.font = '14px monospace';
+        ctx.fillText(areaName, 10, 20);
 
-        // Controls hint
-        ctx.fillStyle = PALETTE.uiBg + '99';
-        ctx.fillRect(4, CANVAS_HEIGHT - 22, 150, 18);
-        ctx.fillStyle = PALETTE.uiText;
-        ctx.font = '8px monospace';
-        ctx.fillText('ZQSD:Move  E:Interact  M:Menu', 6, CANVAS_HEIGHT - 10);
+        // Controls hint — bottom left
+        ctx.fillStyle = 'rgba(21, 19, 24, 0.6)';
+        ctx.fillRect(4, CANVAS_HEIGHT - 28, 260, 24);
+        ctx.fillStyle = '#808080';
+        ctx.font = '12px monospace';
+        ctx.fillText('ZQSD:Move  E:Interact  I:Inventory', 8, CANVAS_HEIGHT - 12);
 
         // Minimap
         if (typeof Minimap !== 'undefined') {

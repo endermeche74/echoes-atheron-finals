@@ -160,285 +160,261 @@ const Tilemap = (function() {
     
     // === RENDERING ===
     function render(ctx) {
-        const P = Engine.PALETTE;
-        
-        // Get visible tile range
-        const cam = typeof Camera !== 'undefined' ? Camera.getOffset() : {x: 0, y: 0};
+        const cam = typeof Camera !== 'undefined' ? Camera.getOffset() : { x: 0, y: 0 };
+
         const startX = Math.floor(cam.x / TILE);
         const startY = Math.floor(cam.y / TILE);
-        const endX = startX + Engine.CANVAS_TILES_X + 1;
-        const endY = startY + Engine.CANVAS_TILES_Y + 1;
-        
-        // Render tiles
-        for (let y = startY; y <= endY; y++) {
-            for (let x = startX; x <= endX; x++) {
-                const tile = getTile(x, y);
-                const px = x * TILE;
-                const py = y * TILE;
-                
-                renderTile(ctx, tile, px, py, x, y);
+        const endX   = startX + CONFIG.GRID_W + 1;
+        const endY   = startY + CONFIG.GRID_H + 1;
+
+        for (let ty = startY; ty <= endY; ty++) {
+            for (let tx = startX; tx <= endX; tx++) {
+                if (tx < 0 || ty < 0 || tx >= mapWidth || ty >= mapHeight) continue;
+                renderTile(ctx, getTile(tx, ty), tx * TILE, ty * TILE, tx, ty);
             }
         }
     }
-    
+
+    // All tile art is drawn in 16×16 space; SpriteScaler handles the 3× magnification.
     function renderTile(ctx, tile, px, py, tx, ty) {
         const P = Engine.PALETTE;
-        
-        switch (tile) {
-            case TILES.VOID:
-                ctx.fillStyle = P.void;
-                ctx.fillRect(px, py, TILE, TILE);
-                break;
-                
-            case TILES.FLOOR:
-                ctx.fillStyle = P.stone;
-                ctx.fillRect(px, py, TILE, TILE);
-                // Add subtle variation
-                if ((tx + ty) % 3 === 0) {
-                    ctx.fillStyle = P.shadow;
-                    ctx.fillRect(px + 2, py + 2, 2, 2);
-                }
-                // Grid lines
-                ctx.fillStyle = P.shadow;
-                ctx.fillRect(px, py, 1, TILE);
-                ctx.fillRect(px, py, TILE, 1);
-                break;
-                
-            case TILES.WALL:
-                ctx.fillStyle = P.wall;
-                ctx.fillRect(px, py, TILE, TILE);
-                // Brick pattern
-                ctx.fillStyle = P.shadow;
-                ctx.fillRect(px, py + 5, TILE, 1);
-                ctx.fillRect(px, py + 11, TILE, 1);
-                ctx.fillRect(px + ((ty % 2) * 8), py, 1, 6);
-                ctx.fillRect(px + ((ty % 2) * (TILE/2) + TILE/2) % TILE, py + 6, 1, 5);
-                break;
-                
-            case TILES.WALL_TOP:
-                ctx.fillStyle = P.wallLight;
-                ctx.fillRect(px, py, TILE, TILE);
-                // Cap detail
-                ctx.fillStyle = P.wall;
-                ctx.fillRect(px, py + TILE - 4, TILE, 4);
-                break;
-                
-            case TILES.DIRT:
-                ctx.fillStyle = P.dirt;
-                ctx.fillRect(px, py, TILE, TILE);
-                // Texture
-                ctx.fillStyle = P.shadow;
-                if ((tx * 7 + ty * 3) % 5 === 0) ctx.fillRect(px + 3, py + 7, 2, 2);
-                if ((tx * 3 + ty * 11) % 7 === 0) ctx.fillRect(px + 10, py + 4, 1, 1);
-                break;
-                
-            case TILES.GRASS:
-                ctx.fillStyle = P.grass;
-                ctx.fillRect(px, py, TILE, TILE);
-                // Grass blades
-                ctx.fillStyle = '#2a3f25';
-                ctx.fillRect(px + 3, py + 2, 1, 3);
-                ctx.fillRect(px + 8, py + 5, 1, 2);
-                ctx.fillRect(px + 12, py + 3, 1, 3);
-                break;
-                
-            case TILES.PATH:
-                ctx.fillStyle = P.path;
-                ctx.fillRect(px, py, TILE, TILE);
-                // Worn texture
-                ctx.fillStyle = P.dirt;
-                ctx.fillRect(px + 4, py + 4, 8, 8);
-                break;
-                
-            case TILES.WATER:
-                ctx.fillStyle = P.water;
-                ctx.fillRect(px, py, TILE, TILE);
-                // Ripple effect (simple)
-                ctx.fillStyle = '#253040';
-                ctx.fillRect(px + 2 + ((tx + ty) % 3) * 4, py + 6, 4, 1);
-                break;
-                
-            case TILES.DOOR:
-                // Open doorway
-                ctx.fillStyle = P.night;
-                ctx.fillRect(px, py, TILE, TILE);
-                // Frame
-                ctx.fillStyle = P.wood;
-                ctx.fillRect(px, py, 2, TILE);
-                ctx.fillRect(px + TILE - 2, py, 2, TILE);
-                ctx.fillRect(px, py, TILE, 2);
-                break;
-                
-            case TILES.DOOR_CLOSED:
-                ctx.fillStyle = P.wood;
-                ctx.fillRect(px, py, TILE, TILE);
-                // Door details
-                ctx.fillStyle = P.shadow;
-                ctx.fillRect(px + 3, py + 3, 4, 10);
-                ctx.fillRect(px + 9, py + 3, 4, 10);
-                // Handle
-                ctx.fillStyle = P.gold;
-                ctx.fillRect(px + 12, py + 8, 2, 2);
-                break;
-                
-            case TILES.PILLAR:
-                ctx.fillStyle = P.stone;
-                ctx.fillRect(px, py, TILE, TILE);
-                // Pillar
-                ctx.fillStyle = P.wallLight;
-                ctx.fillRect(px + 3, py, 10, TILE);
-                ctx.fillStyle = P.wall;
-                ctx.fillRect(px + 5, py, 6, TILE);
-                break;
-                
-            case TILES.CRATE:
-                ctx.fillStyle = P.stone;
-                ctx.fillRect(px, py, TILE, TILE);
-                ctx.fillStyle = P.wood;
-                ctx.fillRect(px + 2, py + 4, 12, 12);
-                ctx.fillStyle = P.shadow;
-                ctx.fillRect(px + 2, py + 9, 12, 1);
-                ctx.fillRect(px + 7, py + 4, 1, 12);
-                break;
+        SpriteScaler.renderScaled(ctx, function(c, ox, oy) {
+            switch (tile) {
+                case TILES.VOID:
+                    c.fillStyle = P.void;
+                    c.fillRect(ox, oy, 16, 16);
+                    break;
 
-            case TILES.TABLE:
-                ctx.fillStyle = P.stone;
-                ctx.fillRect(px, py, TILE, TILE);
-                ctx.fillStyle = P.wood;
-                ctx.fillRect(px + 1, py + 5, TILE - 2, 5);
-                ctx.fillStyle = P.shadow;
-                ctx.fillRect(px + 2, py + 10, 2, 4);
-                ctx.fillRect(px + TILE - 4, py + 10, 2, 4);
-                break;
+                case TILES.FLOOR:
+                    c.fillStyle = P.stone;
+                    c.fillRect(ox, oy, 16, 16);
+                    if ((tx + ty) % 3 === 0) {
+                        c.fillStyle = P.shadow;
+                        c.fillRect(ox + 2, oy + 2, 2, 2);
+                    }
+                    c.fillStyle = P.shadow;
+                    c.fillRect(ox,      oy, 1, 16);
+                    c.fillRect(ox,      oy, 16, 1);
+                    break;
 
-            case TILES.CHAIR:
-                ctx.fillStyle = P.stone;
-                ctx.fillRect(px, py, TILE, TILE);
-                ctx.fillStyle = P.wood;
-                ctx.fillRect(px + 4, py + 2, 8, 3);  // back
-                ctx.fillRect(px + 4, py + 7, 8, 3);  // seat
-                ctx.fillRect(px + 4, py + 10, 2, 4); // legs
-                ctx.fillRect(px + 10, py + 10, 2, 4);
-                break;
+                case TILES.WALL:
+                    c.fillStyle = P.wall;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = P.shadow;
+                    c.fillRect(ox,           oy + 5,  16, 1);
+                    c.fillRect(ox,           oy + 11, 16, 1);
+                    c.fillRect(ox + (ty % 2) * 8,              oy,     1, 6);
+                    c.fillRect(ox + ((ty % 2) * 8 + 8) % 16,  oy + 6, 1, 5);
+                    break;
 
-            case TILES.BED:
-                ctx.fillStyle = P.stone;
-                ctx.fillRect(px, py, TILE, TILE);
-                ctx.fillStyle = P.wood;
-                ctx.fillRect(px + 1, py + 2, TILE - 2, TILE - 4);
-                ctx.fillStyle = '#707080';
-                ctx.fillRect(px + 2, py + 3, 5, 4);  // pillow
-                ctx.fillStyle = '#404858';
-                ctx.fillRect(px + 2, py + 8, 12, 5);  // blanket
-                break;
-                
-            case TILES.STAIRS_UP:
-            case TILES.STAIRS_DOWN:
-                ctx.fillStyle = P.stone;
-                ctx.fillRect(px, py, TILE, TILE);
-                // Steps
-                ctx.fillStyle = P.wallLight;
-                for (let i = 0; i < 4; i++) {
-                    ctx.fillRect(px + 2, py + 2 + i * 3, 12 - i * 2, 2);
-                }
-                break;
-                
-            case TILES.EXIT_N:
-                ctx.fillStyle = P.stone;
-                ctx.fillRect(px, py, TILE, TILE);
-                ctx.fillStyle = 'rgba(180,160,60,0.3)';
-                ctx.fillRect(px, py, TILE, TILE);
-                // upward arrow
-                ctx.fillStyle = 'rgba(230,210,90,0.9)';
-                ctx.fillRect(px + 7, py + 3, 2, 8);
-                ctx.fillRect(px + 5, py + 5, 2, 2);
-                ctx.fillRect(px + 9, py + 5, 2, 2);
-                ctx.fillRect(px + 4, py + 7, 1, 1);
-                ctx.fillRect(px + 11, py + 7, 1, 1);
-                break;
+                case TILES.WALL_TOP:
+                    c.fillStyle = P.wallLight;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = P.wall;
+                    c.fillRect(ox, oy + 12, 16, 4);
+                    break;
 
-            case TILES.EXIT_S:
-                ctx.fillStyle = P.stone;
-                ctx.fillRect(px, py, TILE, TILE);
-                ctx.fillStyle = 'rgba(180,160,60,0.3)';
-                ctx.fillRect(px, py, TILE, TILE);
-                // downward arrow
-                ctx.fillStyle = 'rgba(230,210,90,0.9)';
-                ctx.fillRect(px + 7, py + 5, 2, 8);
-                ctx.fillRect(px + 5, py + 9, 2, 2);
-                ctx.fillRect(px + 9, py + 9, 2, 2);
-                ctx.fillRect(px + 4, py + 8, 1, 1);
-                ctx.fillRect(px + 11, py + 8, 1, 1);
-                break;
+                case TILES.DIRT:
+                    c.fillStyle = P.dirt;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = P.shadow;
+                    if ((tx * 7 + ty * 3) % 5 === 0) c.fillRect(ox + 3,  oy + 7, 2, 2);
+                    if ((tx * 3 + ty * 11) % 7 === 0) c.fillRect(ox + 10, oy + 4, 1, 1);
+                    break;
 
-            case TILES.EXIT_E:
-                ctx.fillStyle = P.stone;
-                ctx.fillRect(px, py, TILE, TILE);
-                ctx.fillStyle = 'rgba(180,160,60,0.3)';
-                ctx.fillRect(px, py, TILE, TILE);
-                // rightward arrow
-                ctx.fillStyle = 'rgba(230,210,90,0.9)';
-                ctx.fillRect(px + 4, py + 7, 8, 2);
-                ctx.fillRect(px + 9, py + 5, 2, 2);
-                ctx.fillRect(px + 9, py + 9, 2, 2);
-                break;
+                case TILES.GRASS:
+                    c.fillStyle = P.grass;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = '#2a3f25';
+                    c.fillRect(ox + 3,  oy + 2, 1, 3);
+                    c.fillRect(ox + 8,  oy + 5, 1, 2);
+                    c.fillRect(ox + 12, oy + 3, 1, 3);
+                    break;
 
-            case TILES.EXIT_W:
-                ctx.fillStyle = P.stone;
-                ctx.fillRect(px, py, TILE, TILE);
-                ctx.fillStyle = 'rgba(180,160,60,0.3)';
-                ctx.fillRect(px, py, TILE, TILE);
-                // leftward arrow
-                ctx.fillStyle = 'rgba(230,210,90,0.9)';
-                ctx.fillRect(px + 4, py + 7, 8, 2);
-                ctx.fillRect(px + 4, py + 5, 2, 2);
-                ctx.fillRect(px + 4, py + 9, 2, 2);
-                break;
-                
-            case TILES.BLOOD:
-                ctx.fillStyle = P.stone;
-                ctx.fillRect(px, py, TILE, TILE);
-                // Blood splatter
-                ctx.fillStyle = P.blood;
-                ctx.fillRect(px + 4, py + 5, 6, 4);
-                ctx.fillRect(px + 2, py + 7, 3, 2);
-                ctx.fillRect(px + 9, py + 4, 2, 3);
-                break;
-                
-            case TILES.MOSS:
-                ctx.fillStyle = P.stone;
-                ctx.fillRect(px, py, TILE, TILE);
-                ctx.fillStyle = P.moss;
-                ctx.fillRect(px + 1, py + 10, 5, 4);
-                ctx.fillRect(px + 8, py + 12, 4, 3);
-                break;
+                case TILES.PATH:
+                    c.fillStyle = P.path;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = P.dirt;
+                    c.fillRect(ox + 4, oy + 4, 8, 8);
+                    break;
 
-            case TILES.CRACK:
-                ctx.fillStyle = P.stone;
-                ctx.fillRect(px, py, TILE, TILE);
-                ctx.fillStyle = P.shadow;
-                ctx.fillRect(px + 6, py + 2, 1, 5);
-                ctx.fillRect(px + 7, py + 7, 1, 5);
-                ctx.fillRect(px + 4, py + 5, 2, 1);
-                ctx.fillRect(px + 8, py + 9, 3, 1);
-                break;
+                case TILES.WATER:
+                    c.fillStyle = P.water;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = '#253040';
+                    c.fillRect(ox + 2 + (tx + ty) % 3 * 4, oy + 6, 4, 1);
+                    break;
 
-            case TILES.RUBBLE:
-                ctx.fillStyle = P.stone;
-                ctx.fillRect(px, py, TILE, TILE);
-                ctx.fillStyle = P.wall;
-                ctx.fillRect(px + 2, py + 8, 5, 4);
-                ctx.fillRect(px + 8, py + 6, 4, 4);
-                ctx.fillRect(px + 5, py + 11, 5, 2);
-                ctx.fillStyle = P.shadow;
-                ctx.fillRect(px + 3, py + 9, 2, 2);
-                break;
+                case TILES.DOOR:
+                    c.fillStyle = P.night;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = P.wood;
+                    c.fillRect(ox,      oy, 2, 16);
+                    c.fillRect(ox + 14, oy, 2, 16);
+                    c.fillRect(ox,      oy, 16, 2);
+                    break;
 
-            default:
-                // Unknown tile — render as plain floor so maps don't break visually
-                ctx.fillStyle = P.stone;
-                ctx.fillRect(px, py, TILE, TILE);
-        }
+                case TILES.DOOR_CLOSED:
+                    c.fillStyle = P.wood;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = P.shadow;
+                    c.fillRect(ox + 3, oy + 3, 4, 10);
+                    c.fillRect(ox + 9, oy + 3, 4, 10);
+                    c.fillStyle = P.gold;
+                    c.fillRect(ox + 12, oy + 8, 2, 2);
+                    break;
+
+                case TILES.PILLAR:
+                    c.fillStyle = P.stone;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = P.wallLight;
+                    c.fillRect(ox + 3, oy, 10, 16);
+                    c.fillStyle = P.wall;
+                    c.fillRect(ox + 5, oy, 6, 16);
+                    break;
+
+                case TILES.CRATE:
+                    c.fillStyle = P.stone;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = P.wood;
+                    c.fillRect(ox + 2, oy + 4, 12, 12);
+                    c.fillStyle = P.shadow;
+                    c.fillRect(ox + 2, oy + 9, 12, 1);
+                    c.fillRect(ox + 7, oy + 4,  1, 12);
+                    break;
+
+                case TILES.TABLE:
+                    c.fillStyle = P.stone;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = P.wood;
+                    c.fillRect(ox + 1,  oy + 5, 14, 5);
+                    c.fillStyle = P.shadow;
+                    c.fillRect(ox + 2,  oy + 10, 2, 4);
+                    c.fillRect(ox + 12, oy + 10, 2, 4);
+                    break;
+
+                case TILES.CHAIR:
+                    c.fillStyle = P.stone;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = P.wood;
+                    c.fillRect(ox + 4,  oy + 2,  8, 3);
+                    c.fillRect(ox + 4,  oy + 7,  8, 3);
+                    c.fillRect(ox + 4,  oy + 10, 2, 4);
+                    c.fillRect(ox + 10, oy + 10, 2, 4);
+                    break;
+
+                case TILES.BED:
+                    c.fillStyle = P.stone;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = P.wood;
+                    c.fillRect(ox + 1, oy + 2, 14, 12);
+                    c.fillStyle = '#707080';
+                    c.fillRect(ox + 2, oy + 3, 5, 4);
+                    c.fillStyle = '#404858';
+                    c.fillRect(ox + 2, oy + 8, 12, 5);
+                    break;
+
+                case TILES.STAIRS_UP:
+                case TILES.STAIRS_DOWN:
+                    c.fillStyle = P.stone;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = P.wallLight;
+                    for (let i = 0; i < 4; i++) {
+                        c.fillRect(ox + 2, oy + 2 + i * 3, 12 - i * 2, 2);
+                    }
+                    break;
+
+                case TILES.EXIT_N:
+                    c.fillStyle = P.stone;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = 'rgba(180,160,60,0.3)';
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = 'rgba(230,210,90,0.9)';
+                    c.fillRect(ox + 7, oy + 3, 2, 8);
+                    c.fillRect(ox + 5, oy + 5, 2, 2);
+                    c.fillRect(ox + 9, oy + 5, 2, 2);
+                    c.fillRect(ox + 4, oy + 7, 1, 1);
+                    c.fillRect(ox + 11, oy + 7, 1, 1);
+                    break;
+
+                case TILES.EXIT_S:
+                    c.fillStyle = P.stone;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = 'rgba(180,160,60,0.3)';
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = 'rgba(230,210,90,0.9)';
+                    c.fillRect(ox + 7, oy + 5, 2, 8);
+                    c.fillRect(ox + 5, oy + 9, 2, 2);
+                    c.fillRect(ox + 9, oy + 9, 2, 2);
+                    c.fillRect(ox + 4,  oy + 8, 1, 1);
+                    c.fillRect(ox + 11, oy + 8, 1, 1);
+                    break;
+
+                case TILES.EXIT_E:
+                    c.fillStyle = P.stone;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = 'rgba(180,160,60,0.3)';
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = 'rgba(230,210,90,0.9)';
+                    c.fillRect(ox + 4, oy + 7, 8, 2);
+                    c.fillRect(ox + 9, oy + 5, 2, 2);
+                    c.fillRect(ox + 9, oy + 9, 2, 2);
+                    break;
+
+                case TILES.EXIT_W:
+                    c.fillStyle = P.stone;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = 'rgba(180,160,60,0.3)';
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = 'rgba(230,210,90,0.9)';
+                    c.fillRect(ox + 4, oy + 7, 8, 2);
+                    c.fillRect(ox + 4, oy + 5, 2, 2);
+                    c.fillRect(ox + 4, oy + 9, 2, 2);
+                    break;
+
+                case TILES.BLOOD:
+                    c.fillStyle = P.stone;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = P.blood;
+                    c.fillRect(ox + 4, oy + 5, 6, 4);
+                    c.fillRect(ox + 2, oy + 7, 3, 2);
+                    c.fillRect(ox + 9, oy + 4, 2, 3);
+                    break;
+
+                case TILES.MOSS:
+                    c.fillStyle = P.stone;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = P.moss;
+                    c.fillRect(ox + 1, oy + 10, 5, 4);
+                    c.fillRect(ox + 8, oy + 12, 4, 3);
+                    break;
+
+                case TILES.CRACK:
+                    c.fillStyle = P.stone;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = P.shadow;
+                    c.fillRect(ox + 6, oy + 2, 1, 5);
+                    c.fillRect(ox + 7, oy + 7, 1, 5);
+                    c.fillRect(ox + 4, oy + 5, 2, 1);
+                    c.fillRect(ox + 8, oy + 9, 3, 1);
+                    break;
+
+                case TILES.RUBBLE:
+                    c.fillStyle = P.stone;
+                    c.fillRect(ox, oy, 16, 16);
+                    c.fillStyle = P.wall;
+                    c.fillRect(ox + 2, oy + 8, 5, 4);
+                    c.fillRect(ox + 8, oy + 6, 4, 4);
+                    c.fillRect(ox + 5, oy + 11, 5, 2);
+                    c.fillStyle = P.shadow;
+                    c.fillRect(ox + 3, oy + 9, 2, 2);
+                    break;
+
+                default:
+                    c.fillStyle = P.stone;
+                    c.fillRect(ox, oy, 16, 16);
+            }
+        }, px, py);
     }
     
     function renderEntities(ctx) {

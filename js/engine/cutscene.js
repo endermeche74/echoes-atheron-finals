@@ -103,79 +103,79 @@ const Cutscene = (function() {
     }
     
     function renderDialogueBox(ctx, W, H) {
-        const boxH = 60;
+        const boxH = 80;
         const boxY = H - boxH - 10;
-        
+
         ctx.fillStyle = 'rgba(0,0,0,0.85)';
         ctx.fillRect(10, boxY, W - 20, boxH);
         ctx.strokeStyle = '#888';
         ctx.strokeRect(10, boxY, W - 20, boxH);
-        
+
         // Speaker name
         if (current.speaker) {
             ctx.fillStyle = '#fc0';
-            ctx.font = 'bold 10px monospace';
-            ctx.fillText(current.speaker, 18, boxY + 14);
+            ctx.font = 'bold 14px monospace';
+            ctx.fillText(current.speaker, 18, boxY + 18);
         }
-        
+
         // Text
         ctx.fillStyle = '#fff';
-        ctx.font = '9px monospace';
+        ctx.font = '12px monospace';
         const displayText = current.text.substring(0, charIndex);
-        wrapText(ctx, displayText, 18, boxY + 28, W - 40, 12);
-        
+        wrapText(ctx, displayText, 18, boxY + 38, W - 40, 16);
+
         // Continue prompt
         if (charIndex >= current.text.length) {
             ctx.fillStyle = '#888';
-            ctx.fillText('▼', W - 25, boxY + boxH - 8);
+            ctx.fillText('▼', W - 28, boxY + boxH - 10);
         }
     }
     
     function renderTextBox(ctx, W, H) {
-        const boxW = 200;
-        const boxH = 40;
+        const boxW = 280;
+        const boxH = 52;
         const boxX = (W - boxW) / 2;
         const boxY = H / 2 - boxH / 2;
-        
+
         ctx.fillStyle = 'rgba(0,0,0,0.9)';
         ctx.fillRect(boxX, boxY, boxW, boxH);
         ctx.strokeStyle = '#888';
         ctx.strokeRect(boxX, boxY, boxW, boxH);
-        
+
         ctx.fillStyle = '#fff';
-        ctx.font = '10px monospace';
+        ctx.font = '13px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText(current.text.substring(0, charIndex), W / 2, boxY + 25);
+        ctx.fillText(current.text.substring(0, charIndex), W / 2, boxY + 30);
         ctx.textAlign = 'left';
     }
     
     function renderBossIntro(ctx, W, H) {
         // Dramatic black bars
         ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, 40);
-        ctx.fillRect(0, H - 40, W, 40);
-        
+        ctx.fillRect(0, 0, W, 60);
+        ctx.fillRect(0, H - 60, W, 60);
+
         // Boss name
         ctx.fillStyle = '#c00';
-        ctx.font = 'bold 16px monospace';
+        ctx.font = 'bold 22px monospace';
         ctx.textAlign = 'center';
         ctx.fillText(current.name, W / 2, H / 2);
-        
+
         // Subtitle
         if (current.subtitle) {
             ctx.fillStyle = '#888';
-            ctx.font = '10px monospace';
-            ctx.fillText(current.subtitle, W / 2, H / 2 + 16);
+            ctx.font = '14px monospace';
+            ctx.fillText(current.subtitle, W / 2, H / 2 + 22);
         }
-        
+
         ctx.textAlign = 'left';
-        
+
         // Continue prompt
         if (waitingForInput) {
             ctx.fillStyle = '#666';
-            ctx.font = '8px monospace';
+            ctx.font = '12px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText('Press any key', W / 2, H - 50);
+            ctx.fillText('Press any key', W / 2, H - 70);
             ctx.textAlign = 'left';
         }
     }

@@ -5,9 +5,9 @@
 const Minimap = (function() {
     
     let enabled = true;
-    let scale = 2; // pixels per tile
-    let size = 60; // minimap size
-    let margin = 8;
+    let scale = 3; // pixels per tile
+    let size = 80; // minimap size
+    let margin = 10;
     
     const markers = [];
     

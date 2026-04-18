@@ -51,6 +51,7 @@ const Tilemap = (function() {
     
     // === STATE ===
     let currentMap = null;
+    let currentAreaId = null;
     let mapWidth = 0;
     let mapHeight = 0;
     let tileData = [];
@@ -75,6 +76,7 @@ const Tilemap = (function() {
         }
         
         currentMap = map;
+        currentAreaId = areaId;
         mapWidth = map.width;
         mapHeight = map.height;
         tileData = map.tiles.slice();  // Copy array
@@ -565,6 +567,8 @@ const Tilemap = (function() {
         getEntities: () => entities,
         
         // Map info
+        getCurrentArea: () => currentAreaId,
+        getCurrentMap: () => currentMap,
         getWidth: () => mapWidth,
         getHeight: () => mapHeight,
         

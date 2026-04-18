@@ -168,7 +168,6 @@
     function addLightingOverlay() {
         const container = document.getElementById('canvas-container');
         if (container && !document.getElementById('lighting-overlay')) {
-            container.style.position = 'relative';
             container.appendChild(lightingCanvas);
             startLightingLoop();
             console.log('[LightingIntegration] Overlay added');

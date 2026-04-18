@@ -27,8 +27,8 @@ const Player = (function() {
     // === SYNC WITH GAME STATE ===
     function syncFromState() {
         transitionCooldown = 1.0;  // prevent immediate re-transition after area load
-        // Get spawn point from current area
-        const areaId = (typeof state !== 'undefined' && state.area) ? state.area : 'verath_arch';
+        // P is the game's state object (state.js uses var P, not var state)
+        const areaId = (typeof P !== 'undefined' && P.area) ? P.area : 'verath_arch';
         
         if (typeof Maps !== 'undefined') {
             const map = Maps.get(areaId);
@@ -110,7 +110,7 @@ const Player = (function() {
         }
         
         // Interaction
-        if (Input.wasPressed('INTERACT') && interactCooldown <= 0) {
+        if (Input.wasPressed('interact') && interactCooldown <= 0) {
             tryInteract();
             interactCooldown = 0.3;
         }
@@ -223,52 +223,56 @@ const Player = (function() {
     
     // === RENDER ===
     function render(ctx) {
-        const P = Engine.PALETTE;
-        
-        // Draw shadow
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
-        ctx.beginPath();
-        ctx.ellipse(x + TILE/2, y + TILE - 2, 5, 2, 0, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Body color based on facing
-        ctx.fillStyle = P.player;
-        
-        // Simple animated sprite
+        const PAL = Engine.PALETTE;
         const bobY = isMoving ? Math.sin(animFrame * Math.PI / 2) * 1 : 0;
-        
-        // Body (slightly taller than wide)
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+        ctx.beginPath();
+        ctx.ellipse(x + TILE/2, y + TILE - 1, 6, 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Dark outline (1px border makes player visible on any background)
+        ctx.fillStyle = '#111';
+        ctx.fillRect(x + 2, y + 3 - bobY, 12, 12);  // body outline
+        ctx.fillRect(x + 3, y      - bobY, 10,  8);  // head outline
+
+        // Body — warm tan, clearly distinct from grass/stone
+        ctx.fillStyle = '#c8a878';
         ctx.fillRect(x + 3, y + 4 - bobY, 10, 10);
-        
+
+        // Cloak / tunic overlay
+        ctx.fillStyle = '#7a5c3a';
+        ctx.fillRect(x + 4, y + 6 - bobY, 8, 7);
+
         // Head
-        ctx.fillStyle = '#b0a090';
+        ctx.fillStyle = '#e0c090';
         ctx.fillRect(x + 4, y + 1 - bobY, 8, 6);
-        
-        // Eyes (based on facing)
-        ctx.fillStyle = '#202020';
+
+        // Eyes
+        ctx.fillStyle = '#1a1a1a';
         switch (facing) {
             case 'down':
-                ctx.fillRect(x + 5, y + 4 - bobY, 2, 2);
-                ctx.fillRect(x + 9, y + 4 - bobY, 2, 2);
+                ctx.fillRect(x + 5, y + 3 - bobY, 2, 2);
+                ctx.fillRect(x + 9, y + 3 - bobY, 2, 2);
                 break;
             case 'up':
-                // Back of head - no eyes
-                ctx.fillStyle = '#807060';
+                ctx.fillStyle = '#8a7060';
                 ctx.fillRect(x + 5, y + 2 - bobY, 6, 3);
                 break;
             case 'left':
-                ctx.fillRect(x + 4, y + 4 - bobY, 2, 2);
+                ctx.fillRect(x + 4, y + 3 - bobY, 2, 2);
                 break;
             case 'right':
-                ctx.fillRect(x + 10, y + 4 - bobY, 2, 2);
+                ctx.fillRect(x + 10, y + 3 - bobY, 2, 2);
                 break;
         }
-        
-        // Legs (animated when moving)
-        ctx.fillStyle = '#505050';
+
+        // Legs
+        ctx.fillStyle = '#4a3a28';
         if (isMoving) {
             const legOffset = (animFrame % 2) * 3 - 1;
-            ctx.fillRect(x + 4, y + 13, 3, 3);
+            ctx.fillRect(x + 4,            y + 13, 3, 3);
             ctx.fillRect(x + 9 + legOffset, y + 13, 3, 3);
         } else {
             ctx.fillRect(x + 4, y + 13, 3, 3);

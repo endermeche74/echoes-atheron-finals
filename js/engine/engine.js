@@ -63,6 +63,7 @@ const Engine = (function() {
     let currentMode = 'text';  // 'text' or 'canvas'
     let canvasContainer = null;
     let textContainer = null;
+    let canvasEverEntered = false;  // guard: only sync player on very first entry
 
     // === INITIALIZATION ===
     function init() {
@@ -162,38 +163,46 @@ const Engine = (function() {
 
     function enterCanvasMode() {
         currentMode = 'canvas';
-        
+
         // Hide text UI, show canvas
         if (textContainer) textContainer.style.display = 'none';
         canvasContainer.style.display = 'block';
-        
+
         // Update toggle button
         const toggle = document.getElementById('mode-toggle');
         if (toggle) toggle.textContent = '📜 Text Mode [M]';
-        
+
         // Start game loop
         if (!isRunning) {
             isRunning = true;
             lastTime = performance.now();
             requestAnimationFrame(gameLoop);
         }
-        
-        // Load initial area
-        if (typeof Tilemap !== 'undefined') {
-            const startArea = (typeof state !== 'undefined' && state.area) ? state.area : 'verath_arch';
-            Tilemap.loadArea(startArea);
+
+        // Only load/sync on very first entry — subsequent presses of M keep player where they are
+        if (!canvasEverEntered) {
+            canvasEverEntered = true;
+
+            // Use P.area (the game's actual state variable) not 'state'
+            const startArea = (typeof P !== 'undefined' && P.area) ? P.area : 'verath_arch';
+            if (typeof Tilemap !== 'undefined') {
+                Tilemap.loadArea(startArea);
+            }
+            if (typeof Player !== 'undefined') {
+                Player.syncFromState();
+            }
         }
-        
-        // Initialize player position from current area
-        if (typeof Player !== 'undefined') {
-            Player.syncFromState();
+
+        // Snap camera to player AFTER player is positioned
+        if (typeof Camera !== 'undefined') {
+            Camera.snapToPlayer();
         }
-        
+
         // Enable input
         if (typeof Input !== 'undefined') {
             Input.enable();
         }
-        
+
         console.log('[Engine] Entered canvas mode');
     }
 
@@ -300,26 +309,38 @@ const Engine = (function() {
     }
 
     function renderUI() {
-        // Area name
-        const areaName = typeof state !== 'undefined' ? 
-            (state.area || 'Unknown').replace(/_/g, ' ').toUpperCase() : 
-            'UNKNOWN';
-        
+        // Resolve area name: prefer map's human-readable name, fall back to ID
+        let areaName = 'UNKNOWN';
+        if (typeof Tilemap !== 'undefined' && Tilemap.getCurrentArea) {
+            const areaId = Tilemap.getCurrentArea();
+            if (areaId) {
+                const mapObj = (typeof Maps !== 'undefined') ? Maps.get(areaId) : null;
+                areaName = mapObj ? mapObj.name.toUpperCase()
+                                  : areaId.replace(/_/g, ' ').toUpperCase();
+            }
+        } else if (typeof P !== 'undefined' && P.area) {
+            areaName = P.area.replace(/_/g, ' ').toUpperCase();
+        }
+
         ctx.fillStyle = PALETTE.uiBg + 'cc';
-        ctx.fillRect(4, 4, 120, 18);
+        ctx.fillRect(4, 4, 130, 18);
         ctx.strokeStyle = PALETTE.uiBorder;
-        ctx.strokeRect(4, 4, 120, 18);
-        
+        ctx.strokeRect(4, 4, 130, 18);
         ctx.fillStyle = PALETTE.uiText;
         ctx.font = '10px monospace';
         ctx.fillText(areaName, 8, 16);
-        
+
         // Controls hint
         ctx.fillStyle = PALETTE.uiBg + '99';
-        ctx.fillRect(4, CANVAS_HEIGHT - 22, 140, 18);
+        ctx.fillRect(4, CANVAS_HEIGHT - 22, 150, 18);
         ctx.fillStyle = PALETTE.uiText;
         ctx.font = '8px monospace';
-        ctx.fillText('WASD:Move E:Interact M:Menu', 6, CANVAS_HEIGHT - 10);
+        ctx.fillText('ZQSD:Move  E:Interact  M:Menu', 6, CANVAS_HEIGHT - 10);
+
+        // Minimap
+        if (typeof Minimap !== 'undefined') {
+            Minimap.render(ctx, CANVAS_WIDTH, CANVAS_HEIGHT);
+        }
     }
 
     // === PUBLIC API ===
@@ -360,8 +381,11 @@ const Engine = (function() {
         
         triggerAreaChange: (areaId, spawnX, spawnY) => {
             console.log('[Engine] Area change:', areaId, spawnX, spawnY);
+            // Update game state area (P is the state object, goArea wraps it)
             if (typeof goArea === 'function') {
                 goArea(areaId);
+            } else if (typeof P !== 'undefined') {
+                P.area = areaId;
             }
             if (typeof Tilemap !== 'undefined') {
                 Tilemap.loadArea(areaId);

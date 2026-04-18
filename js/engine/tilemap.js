@@ -324,7 +324,7 @@ const Tilemap = (function() {
             case TILES.EXIT_E:
             case TILES.EXIT_W:
                 // Transition zone - subtle glow
-                ctx.fillStyle = P.floor;
+                ctx.fillStyle = P.stone;
                 ctx.fillRect(px, py, TILE, TILE);
                 ctx.fillStyle = 'rgba(150, 140, 100, 0.2)';
                 ctx.fillRect(px, py, TILE, TILE);

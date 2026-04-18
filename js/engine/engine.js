@@ -84,21 +84,20 @@ const Engine = (function() {
     }
 
     function createCanvas() {
-        // Fullscreen overlay container
+        // Fixed-size centered container, scaled up by CONFIG.SCALE
         canvasContainer = document.createElement('div');
         canvasContainer.id = 'canvas-container';
         canvasContainer.style.cssText = `
             display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            z-index: 500;
+            position: relative;
+            width: ${CANVAS_WIDTH * SCALE}px;
+            height: ${CANVAS_HEIGHT * SCALE}px;
+            margin: 0 auto;
             background: ${PALETTE.void};
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
+            border: 2px solid #3a3545;
         `;
 
-        // Canvas fills the container — CSS scales it, keeping pixel art sharp
+        // Internal canvas at native resolution; CSS scales it 2× keeping pixels sharp
         canvas = document.createElement('canvas');
         canvas.id = 'game-canvas';
         canvas.width = CANVAS_WIDTH;

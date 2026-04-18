@@ -13,8 +13,8 @@
     }
     
     // Get references we need
-    const CANVAS_WIDTH = Engine.CANVAS_WIDTH;
-    const CANVAS_HEIGHT = Engine.CANVAS_HEIGHT;
+    const CANVAS_WIDTH  = CONFIG.CANVAS_W;
+    const CANVAS_HEIGHT = CONFIG.CANVAS_H;
     const PALETTE = Engine.PALETTE;
     
     // Store original functions if they exist
@@ -57,7 +57,6 @@
     function addOverlay() {
         const container = document.getElementById('canvas-container');
         if (container && !document.getElementById('effects-overlay')) {
-            container.style.position = 'relative';
             container.appendChild(effectsOverlay);
             console.log('[EnginePatch] Effects overlay added');
             return true;

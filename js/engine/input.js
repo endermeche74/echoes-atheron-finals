@@ -1,6 +1,6 @@
 /*************************************************************
  * input.js — Keyboard Input Handler
- * Handles: WASD/arrow movement, interact key, enable/disable
+ * Handles: ZQSD/arrow movement (AZERTY), interact key, enable/disable
  *************************************************************/
 
 const Input = (function() {

@@ -551,9 +551,9 @@ const CombatCanvas = (function() {
         if (!active) return;
         
         const keyMap = {
-            'ArrowUp': 'up', 'KeyW': 'up', 'KeyZ': 'up',
+            'ArrowUp': 'up', 'KeyZ': 'up',
             'ArrowDown': 'down', 'KeyS': 'down',
-            'ArrowLeft': 'left', 'KeyA': 'left', 'KeyQ': 'left',
+            'ArrowLeft': 'left', 'KeyQ': 'left',
             'ArrowRight': 'right', 'KeyD': 'right',
             'Enter': 'confirm', 'Space': 'confirm', 'KeyE': 'confirm',
             'Escape': 'cancel', 'Backspace': 'cancel'

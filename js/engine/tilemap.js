@@ -76,9 +76,10 @@ const Tilemap = (function() {
         entities = (map.entities || []).map(e => ({...e}));  // Deep copy
         transitions = map.transitions || [];
         
-        // Set camera bounds only — snap happens after player is repositioned
+        // Update camera bounds and snap to player's current position
         if (typeof Camera !== 'undefined') {
             Camera.setMapBounds(mapWidth * TILE, mapHeight * TILE);
+            Camera.snapToPlayer();
         }
         
         console.log(`[Tilemap] Loaded ${mapWidth}x${mapHeight} map with ${entities.length} entities`);
@@ -108,9 +109,10 @@ const Tilemap = (function() {
         
         if (typeof Camera !== 'undefined') {
             Camera.setMapBounds(mapWidth * TILE, mapHeight * TILE);
+            Camera.snapToPlayer();
         }
     }
-    
+
     // === TILE QUERIES ===
     function getTile(x, y) {
         if (x < 0 || y < 0 || x >= mapWidth || y >= mapHeight) {

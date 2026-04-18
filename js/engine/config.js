@@ -5,16 +5,16 @@
 
 const CONFIG = {
     // Display
-    TILE:    16,
-    CANVAS_W: 320,
-    CANVAS_H: 240,
-    SCALE:   2,
-    GRID_W:  20,
-    GRID_H:  15,
+    TILE:     48,
+    CANVAS_W: 624,   // 13 * 48
+    CANVAS_H: 336,   //  7 * 48
+    SCALE:    2,     // affichage 1248x672
+    GRID_W:   13,
+    GRID_H:   7,
 
     // Player
-    PLAYER_SPEED: 80,
-    PLAYER_HITBOX: { x: 2, y: 4, w: 12, h: 12 },
+    PLAYER_SPEED: 120,
+    PLAYER_HITBOX: { x: 6, y: 12, w: 36, h: 36 },
     INTERACT_RANGE: 1,
 
     // Keyboard AZERTY

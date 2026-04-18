@@ -12,9 +12,9 @@ const KeyboardLayout = (function() {
     // === LAYOUT DEFINITIONS ===
     const LAYOUTS = {
         QWERTY: {
-            up: ['KeyW', 'ArrowUp'],
+            up: ['KeyZ', 'ArrowUp'],
             down: ['KeyS', 'ArrowDown'],
-            left: ['KeyA', 'ArrowLeft'],
+            left: ['KeyQ', 'ArrowLeft'],
             right: ['KeyD', 'ArrowRight'],
             interact: ['KeyE', 'Space'],
             cancel: ['Escape'],
@@ -37,7 +37,7 @@ const KeyboardLayout = (function() {
         }
     };
     
-    let currentLayout = 'QWERTY';
+    let currentLayout = 'AZERTY';
     
     // === APPLY LAYOUT TO INPUT.JS ===
     function applyLayout(layoutName) {
@@ -174,11 +174,10 @@ const KeyboardLayout = (function() {
     
 })();
 
-// Auto-load saved layout or detect
+// Auto-load saved layout, or default to AZERTY
 document.addEventListener('DOMContentLoaded', () => {
     if (!KeyboardLayout.loadSaved()) {
-        // Uncomment to auto-detect based on locale:
-        // KeyboardLayout.autoDetect();
+        KeyboardLayout.setAZERTY();
     }
 });
 

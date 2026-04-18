@@ -5,110 +5,69 @@
  *************************************************************/
 
 const Camera = (function() {
-    const TILE = CONFIG.TILE;
-    
+
     // === STATE ===
     let x = 0;  // top-left corner of viewport in world coords
     let y = 0;
-    let targetX = 0;
-    let targetY = 0;
-    
-    const SMOOTHING = 8;  // Higher = smoother/slower follow
-    const DEADZONE = 32;  // Pixels from center before camera moves
-    
-    // Map bounds (set when area loads)
-    let mapWidth = CONFIG.GRID_W * TILE;
-    let mapHeight = CONFIG.GRID_H * TILE;
-    
+
+    // Map bounds in pixels (updated on every loadArea)
+    let boundsW = CONFIG.GRID_W * CONFIG.TILE;
+    let boundsH = CONFIG.GRID_H * CONFIG.TILE;
+
     // === UPDATE ===
     function update(dt) {
         if (typeof Player === 'undefined') return;
-        
-        // Get player center
-        const playerX = Player.getCenterX();
-        const playerY = Player.getCenterY();
-        
-        // Calculate target (center player in viewport)
-        const viewW = Engine.CANVAS_WIDTH;
-        const viewH = Engine.CANVAS_HEIGHT;
-        
-        targetX = playerX - viewW / 2;
-        targetY = playerY - viewH / 2;
-        
-        // Clamp to map bounds
-        targetX = Math.max(0, Math.min(targetX, mapWidth - viewW));
-        targetY = Math.max(0, Math.min(targetY, mapHeight - viewH));
-        
-        // Smooth follow
-        x += (targetX - x) / SMOOTHING;
-        y += (targetY - y) / SMOOTHING;
-        
-        // Snap if very close
-        if (Math.abs(targetX - x) < 0.5) x = targetX;
-        if (Math.abs(targetY - y) < 0.5) y = targetY;
+
+        // Target: centre le joueur dans le viewport
+        let targetX = Player.getX() + CONFIG.TILE / 2 - CONFIG.CANVAS_W / 2;
+        let targetY = Player.getY() + CONFIG.TILE / 2 - CONFIG.CANVAS_H / 2;
+
+        // Clamp aux bounds de la map
+        targetX = Math.max(0, Math.min(boundsW - CONFIG.CANVAS_W, targetX));
+        targetY = Math.max(0, Math.min(boundsH - CONFIG.CANVAS_H, targetY));
+
+        // Smooth follow (frame-rate independent)
+        x += (targetX - x) * 8 * dt;
+        y += (targetY - y) * 8 * dt;
     }
-    
-    function setMapBounds(width, height) {
-        mapWidth = width;
-        mapHeight = height;
-        
-        // Re-clamp current position
-        const viewW = Engine.CANVAS_WIDTH;
-        const viewH = Engine.CANVAS_HEIGHT;
-        x = Math.max(0, Math.min(x, mapWidth - viewW));
-        y = Math.max(0, Math.min(y, mapHeight - viewH));
+
+    function setMapBounds(mapPixelWidth, mapPixelHeight) {
+        boundsW = mapPixelWidth;
+        boundsH = mapPixelHeight;
     }
-    
+
     function snapToPlayer() {
         if (typeof Player === 'undefined') return;
-        
-        const viewW = Engine.CANVAS_WIDTH;
-        const viewH = Engine.CANVAS_HEIGHT;
-        
-        x = Player.getCenterX() - viewW / 2;
-        y = Player.getCenterY() - viewH / 2;
-        
-        // Clamp
-        x = Math.max(0, Math.min(x, mapWidth - viewW));
-        y = Math.max(0, Math.min(y, mapHeight - viewH));
-        
-        targetX = x;
-        targetY = y;
+
+        x = Player.getX() + CONFIG.TILE / 2 - CONFIG.CANVAS_W / 2;
+        y = Player.getY() + CONFIG.TILE / 2 - CONFIG.CANVAS_H / 2;
+
+        x = Math.max(0, Math.min(boundsW - CONFIG.CANVAS_W, x));
+        y = Math.max(0, Math.min(boundsH - CONFIG.CANVAS_H, y));
     }
-    
+
     // === PUBLIC API ===
     return {
         update,
         setMapBounds,
         snapToPlayer,
-        
+
         getOffset: () => ({ x: Math.floor(x), y: Math.floor(y) }),
         getX: () => x,
         getY: () => y,
 
         // Force camera position (used by debug free-cam)
-        setOffset: (nx, ny) => { x = nx; y = ny; targetX = nx; targetY = ny; },
-        
-        // Convert screen coords to world coords
-        screenToWorld: (sx, sy) => ({
-            x: sx + x,
-            y: sy + y
-        }),
-        
-        // Convert world coords to screen coords
-        worldToScreen: (wx, wy) => ({
-            x: wx - x,
-            y: wy - y
-        }),
-        
-        // Check if world position is visible
-        isVisible: (wx, wy, margin = 0) => {
-            const viewW = Engine.CANVAS_WIDTH;
-            const viewH = Engine.CANVAS_HEIGHT;
-            return wx >= x - margin && 
-                   wx <= x + viewW + margin &&
-                   wy >= y - margin && 
-                   wy <= y + viewH + margin;
-        }
+        setOffset: (nx, ny) => { x = nx; y = ny; },
+
+        // Screen ↔ world conversions
+        screenToWorld: (sx, sy) => ({ x: sx + x, y: sy + y }),
+        worldToScreen: (wx, wy) => ({ x: wx - x, y: wy - y }),
+
+        // Check if world position is on-screen
+        isVisible: (wx, wy, margin = 0) =>
+            wx >= x - margin &&
+            wx <= x + CONFIG.CANVAS_W + margin &&
+            wy >= y - margin &&
+            wy <= y + CONFIG.CANVAS_H + margin
     };
 })();

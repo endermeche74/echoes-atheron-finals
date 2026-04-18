@@ -469,74 +469,68 @@ const Tilemap = (function() {
     }
     
     function renderNPC(ctx, entity, px, py) {
-        const P = Engine.PALETTE;
-        
-        // Shadow
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
-        ctx.beginPath();
-        ctx.ellipse(px + 8, py + 14, 5, 2, 0, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Body
-        ctx.fillStyle = entity.color || P.npc;
-        ctx.fillRect(px + 3, py + 5, 10, 9);
-        
-        // Head
-        ctx.fillStyle = '#a09080';
-        ctx.fillRect(px + 4, py + 1, 8, 6);
-        
-        // Eyes
-        ctx.fillStyle = '#202020';
-        ctx.fillRect(px + 5, py + 3, 2, 2);
-        ctx.fillRect(px + 9, py + 3, 2, 2);
-        
-        // Quest marker if applicable
-        if (entity.hasQuest) {
-            ctx.fillStyle = P.gold;
-            ctx.font = 'bold 10px monospace';
-            ctx.fillText('!', px + 6, py - 2);
-        }
+        SpriteScaler.renderScaled(ctx, function(c, ox, oy) {
+            const P = Engine.PALETTE;
+
+            c.fillStyle = 'rgba(0,0,0,0.3)';
+            c.beginPath();
+            c.ellipse(ox + 8, oy + 14, 5, 2, 0, 0, Math.PI * 2);
+            c.fill();
+
+            c.fillStyle = entity.color || P.npc;
+            c.fillRect(ox + 3, oy + 5, 10, 9);
+
+            c.fillStyle = '#a09080';
+            c.fillRect(ox + 4, oy + 1, 8, 6);
+
+            c.fillStyle = '#202020';
+            c.fillRect(ox + 5, oy + 3, 2, 2);
+            c.fillRect(ox + 9, oy + 3, 2, 2);
+
+            if (entity.hasQuest) {
+                c.fillStyle = P.gold;
+                c.font = 'bold 10px monospace';
+                c.fillText('!', ox + 6, oy - 2);
+            }
+        }, px, py);
     }
     
     function renderEnemy(ctx, entity, px, py) {
-        const P = Engine.PALETTE;
-        
-        // Shadow
-        ctx.fillStyle = 'rgba(0,0,0,0.4)';
-        ctx.beginPath();
-        ctx.ellipse(px + 8, py + 14, 6, 2, 0, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Body (more menacing)
-        ctx.fillStyle = entity.color || P.enemy;
-        ctx.fillRect(px + 2, py + 4, 12, 10);
-        
-        // Head
-        ctx.fillStyle = '#3a2020';
-        ctx.fillRect(px + 3, py + 1, 10, 5);
-        
-        // Glowing eyes
-        ctx.fillStyle = '#ff3030';
-        ctx.fillRect(px + 4, py + 2, 2, 2);
-        ctx.fillRect(px + 10, py + 2, 2, 2);
+        SpriteScaler.renderScaled(ctx, function(c, ox, oy) {
+            const P = Engine.PALETTE;
+
+            c.fillStyle = 'rgba(0,0,0,0.4)';
+            c.beginPath();
+            c.ellipse(ox + 8, oy + 14, 6, 2, 0, 0, Math.PI * 2);
+            c.fill();
+
+            c.fillStyle = entity.color || P.enemy;
+            c.fillRect(ox + 2, oy + 4, 12, 10);
+
+            c.fillStyle = '#3a2020';
+            c.fillRect(ox + 3, oy + 1, 10, 5);
+
+            c.fillStyle = '#ff3030';
+            c.fillRect(ox + 4, oy + 2, 2, 2);
+            c.fillRect(ox + 10, oy + 2, 2, 2);
+        }, px, py);
     }
     
     function renderItem(ctx, entity, px, py) {
-        const P = Engine.PALETTE;
-        
-        // Glow
-        ctx.fillStyle = 'rgba(120, 110, 60, 0.3)';
-        ctx.beginPath();
-        ctx.arc(px + 8, py + 10, 6, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Item
-        ctx.fillStyle = entity.color || P.item;
-        ctx.fillRect(px + 5, py + 6, 6, 6);
-        
-        // Sparkle
-        ctx.fillStyle = P.uiHighlight;
-        ctx.fillRect(px + 6, py + 4, 2, 2);
+        SpriteScaler.renderScaled(ctx, function(c, ox, oy) {
+            const P = Engine.PALETTE;
+
+            c.fillStyle = 'rgba(120, 110, 60, 0.3)';
+            c.beginPath();
+            c.arc(ox + 8, oy + 10, 6, 0, Math.PI * 2);
+            c.fill();
+
+            c.fillStyle = entity.color || P.item;
+            c.fillRect(ox + 5, oy + 6, 6, 6);
+
+            c.fillStyle = P.uiHighlight;
+            c.fillRect(ox + 6, oy + 4, 2, 2);
+        }, px, py);
     }
     
     // === PUBLIC API ===

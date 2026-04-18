@@ -249,63 +249,10 @@ const Player = (function() {
     
     // === RENDER ===
     function render(ctx) {
-        const PAL = Engine.PALETTE;
         const bobY = isMoving ? Math.sin(animFrame * Math.PI / 2) * 1 : 0;
 
-        // Shadow
-        ctx.fillStyle = 'rgba(0,0,0,0.45)';
-        ctx.beginPath();
-        ctx.ellipse(x + TILE/2, y + TILE - 1, 6, 2, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Dark outline (1px border makes player visible on any background)
-        ctx.fillStyle = '#111';
-        ctx.fillRect(x + 2, y + 3 - bobY, 12, 12);  // body outline
-        ctx.fillRect(x + 3, y      - bobY, 10,  8);  // head outline
-
-        // Body — warm tan, clearly distinct from grass/stone
-        ctx.fillStyle = '#c8a878';
-        ctx.fillRect(x + 3, y + 4 - bobY, 10, 10);
-
-        // Cloak / tunic overlay
-        ctx.fillStyle = '#7a5c3a';
-        ctx.fillRect(x + 4, y + 6 - bobY, 8, 7);
-
-        // Head
-        ctx.fillStyle = '#e0c090';
-        ctx.fillRect(x + 4, y + 1 - bobY, 8, 6);
-
-        // Eyes
-        ctx.fillStyle = '#1a1a1a';
-        switch (facing) {
-            case 'down':
-                ctx.fillRect(x + 5, y + 3 - bobY, 2, 2);
-                ctx.fillRect(x + 9, y + 3 - bobY, 2, 2);
-                break;
-            case 'up':
-                ctx.fillStyle = '#8a7060';
-                ctx.fillRect(x + 5, y + 2 - bobY, 6, 3);
-                break;
-            case 'left':
-                ctx.fillRect(x + 4, y + 3 - bobY, 2, 2);
-                break;
-            case 'right':
-                ctx.fillRect(x + 10, y + 3 - bobY, 2, 2);
-                break;
-        }
-
-        // Legs
-        ctx.fillStyle = '#4a3a28';
-        if (isMoving) {
-            const legOffset = (animFrame % 2) * 3 - 1;
-            ctx.fillRect(x + 4,            y + 13, 3, 3);
-            ctx.fillRect(x + 9 + legOffset, y + 13, 3, 3);
-        } else {
-            ctx.fillRect(x + 4, y + 13, 3, 3);
-            ctx.fillRect(x + 9, y + 13, 3, 3);
-        }
-        
-        // [E] prompt — show when entity is in the tile directly ahead
+        // Interact prompt check (tile-based, scale-independent)
+        let showPrompt = false;
         if (typeof Tilemap !== 'undefined') {
             let fx = Math.floor((x + CONFIG.TILE / 2) / CONFIG.TILE);
             let fy = Math.floor((y + CONFIG.TILE / 2) / CONFIG.TILE);
@@ -313,17 +260,77 @@ const Player = (function() {
             else if (facing === 'down')  fy += 1;
             else if (facing === 'left')  fx -= 1;
             else if (facing === 'right') fx += 1;
-
-            if (Tilemap.getEntityAt(fx, fy)) {
-                ctx.fillStyle = P.uiBg + 'dd';
-                ctx.fillRect(x + 4, y - 10, 12, 10);
-                ctx.strokeStyle = P.uiBorder;
-                ctx.strokeRect(x + 4, y - 10, 12, 10);
-                ctx.fillStyle = P.uiHighlight;
-                ctx.font = '8px monospace';
-                ctx.fillText('E', x + 7, y - 3);
-            }
+            showPrompt = !!Tilemap.getEntityAt(fx, fy);
         }
+
+        // All drawing in 16×16 space; SpriteScaler handles the translate+scale
+        SpriteScaler.renderScaled(ctx, function(c, ox, oy) {
+            const PAL = Engine.PALETTE;
+
+            // Shadow
+            c.fillStyle = 'rgba(0,0,0,0.45)';
+            c.beginPath();
+            c.ellipse(ox + 8, oy + 15, 6, 2, 0, 0, Math.PI * 2);
+            c.fill();
+
+            // Dark outline
+            c.fillStyle = '#111';
+            c.fillRect(ox + 2, oy + 3 - bobY, 12, 12);
+            c.fillRect(ox + 3, oy     - bobY, 10,  8);
+
+            // Body
+            c.fillStyle = '#c8a878';
+            c.fillRect(ox + 3, oy + 4 - bobY, 10, 10);
+
+            // Cloak
+            c.fillStyle = '#7a5c3a';
+            c.fillRect(ox + 4, oy + 6 - bobY, 8, 7);
+
+            // Head
+            c.fillStyle = '#e0c090';
+            c.fillRect(ox + 4, oy + 1 - bobY, 8, 6);
+
+            // Eyes
+            c.fillStyle = '#1a1a1a';
+            switch (facing) {
+                case 'down':
+                    c.fillRect(ox + 5, oy + 3 - bobY, 2, 2);
+                    c.fillRect(ox + 9, oy + 3 - bobY, 2, 2);
+                    break;
+                case 'up':
+                    c.fillStyle = '#8a7060';
+                    c.fillRect(ox + 5, oy + 2 - bobY, 6, 3);
+                    break;
+                case 'left':
+                    c.fillRect(ox + 4, oy + 3 - bobY, 2, 2);
+                    break;
+                case 'right':
+                    c.fillRect(ox + 10, oy + 3 - bobY, 2, 2);
+                    break;
+            }
+
+            // Legs
+            c.fillStyle = '#4a3a28';
+            if (isMoving) {
+                const legOffset = (animFrame % 2) * 3 - 1;
+                c.fillRect(ox + 4,            oy + 13, 3, 3);
+                c.fillRect(ox + 9 + legOffset, oy + 13, 3, 3);
+            } else {
+                c.fillRect(ox + 4, oy + 13, 3, 3);
+                c.fillRect(ox + 9, oy + 13, 3, 3);
+            }
+
+            // [E] prompt
+            if (showPrompt) {
+                c.fillStyle = PAL.uiBg + 'dd';
+                c.fillRect(ox + 4, oy - 10, 12, 10);
+                c.strokeStyle = PAL.uiBorder;
+                c.strokeRect(ox + 4, oy - 10, 12, 10);
+                c.fillStyle = PAL.uiHighlight;
+                c.font = '8px monospace';
+                c.fillText('E', ox + 7, oy - 3);
+            }
+        }, x, y);
     }
     
     // === PUBLIC API ===

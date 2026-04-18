@@ -170,25 +170,43 @@ const Player = (function() {
     
     function handleEntity(entity) {
         console.log('[Player] Entity found:', entity);
-        
+
         switch (entity.type) {
             case 'npc':
-                Engine.triggerDialogue(entity.id);
+                if (typeof DialogueCanvas !== 'undefined') {
+                    DialogueCanvas.start(entity.id);
+                } else {
+                    Engine.triggerDialogue(entity.id);
+                }
                 break;
-                
-            case 'enemy':
-                Engine.triggerCombat(entity.id);
+
+            case 'enemy': {
+                const eData = {
+                    name:   entity.name   || entity.id,
+                    hp:     entity.hp     || 50,
+                    maxHp:  entity.maxHp  || entity.hp || 50,
+                    atk:    entity.atk    || 10,
+                    def:    entity.def    || 5,
+                    xp:     entity.xp     || 25,
+                    gold:   entity.gold   || 10,
+                    sprite: entity.sprite || null
+                };
+                if      (typeof CombatFull     !== 'undefined') CombatFull.start(eData);
+                else if (typeof CombatEnhanced !== 'undefined') CombatEnhanced.start(eData);
+                else Engine.triggerCombat(entity.id);
                 break;
-                
+            }
+
             case 'item':
-                // Pick up item
-                if (typeof pickupItem === 'function') {
+                if (typeof P !== 'undefined') {
+                    const inv = P.inv || P.items;
+                    if (inv) inv.push({ id: entity.id, qty: 1, name: entity.name || entity.id, type: 'misc' });
+                } else if (typeof pickupItem === 'function') {
                     pickupItem(entity.id);
                 }
-                // Remove from map
                 Tilemap.removeEntity(entity);
                 break;
-                
+
             case 'exit':
                 Engine.triggerAreaChange(entity.target);
                 break;

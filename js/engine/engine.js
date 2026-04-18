@@ -125,10 +125,11 @@ const Engine = (function() {
 
     // === UPDATE ===
     function update(dt) {
-        if (typeof Player !== 'undefined') Player.update(dt);
-        if (typeof Camera !== 'undefined') Camera.update(dt);
+        if (typeof Player          !== 'undefined') Player.update(dt);
+        if (typeof Camera          !== 'undefined') Camera.update(dt);
+        if (typeof DialogueCanvas  !== 'undefined') DialogueCanvas.update(dt);
         // Flush justPressed AFTER all systems have read it this frame
-        if (typeof Input  !== 'undefined') Input.update();
+        if (typeof Input           !== 'undefined') Input.update();
     }
 
     // === RENDER ===
@@ -166,7 +167,10 @@ const Engine = (function() {
         renderUI();
 
         // ── Screen overlay effects (flash, vignette, fade, wipe) ─
-        if (typeof Effects !== 'undefined') Effects.render(ctx, CANVAS_WIDTH, CANVAS_HEIGHT);
+        if (typeof Effects         !== 'undefined') Effects.render(ctx, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        // ── Dialogue overlay ──────────────────────────────────
+        if (typeof DialogueCanvas  !== 'undefined') DialogueCanvas.render(ctx);
     }
 
     // === HUD ===

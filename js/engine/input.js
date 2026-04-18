@@ -5,15 +5,15 @@
 
 const Input = (function() {
 
-    // === KEY BINDINGS ===
+    // === KEY BINDINGS (sourced from CONFIG.KEYS) ===
     let bindings = {
-        up:       ['KeyW', 'ArrowUp'],
-        down:     ['KeyS', 'ArrowDown'],
-        left:     ['KeyA', 'ArrowLeft'],
-        right:    ['KeyD', 'ArrowRight'],
-        interact: ['KeyE', 'Space'],
-        cancel:   ['Escape'],
-        menu:     ['KeyM'],
+        up:       CONFIG.KEYS.UP,
+        down:     CONFIG.KEYS.DOWN,
+        left:     CONFIG.KEYS.LEFT,
+        right:    CONFIG.KEYS.RIGHT,
+        interact: CONFIG.KEYS.INTERACT,
+        cancel:   CONFIG.KEYS.CANCEL,
+        menu:     CONFIG.KEYS.MENU,
         run:      ['ShiftLeft', 'ShiftRight']
     };
 

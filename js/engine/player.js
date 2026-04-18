@@ -138,26 +138,34 @@ const Player = (function() {
     }
     
     function tryInteract() {
-        if (typeof Tilemap === 'undefined') return;
+        if (typeof Tilemap === 'undefined') return false;
 
-        // Scan all entities within 1.5 tiles — no pixel-perfect positioning needed
-        const RADIUS = 1.5;
-        const pcx = x / TILE + 0.5;   // player center in tile units
-        const pcy = y / TILE + 0.5;
+        // Tile directly in front of the player based on facing direction
+        let checkX = Math.floor((x + CONFIG.TILE / 2) / CONFIG.TILE);
+        let checkY = Math.floor((y + CONFIG.TILE / 2) / CONFIG.TILE);
 
-        let best = null, bestDist = RADIUS + 1;
-
-        for (const entity of Tilemap.getEntities()) {
-            const ecx = entity.x + 0.5;
-            const ecy = entity.y + 0.5;
-            const dist = Math.hypot(ecx - pcx, ecy - pcy);
-            if (dist <= RADIUS && dist < bestDist) {
-                best = entity;
-                bestDist = dist;
-            }
+        switch (facing) {
+            case 'up':    checkY -= 1; break;
+            case 'down':  checkY += 1; break;
+            case 'left':  checkX -= 1; break;
+            case 'right': checkX += 1; break;
         }
 
-        if (best) handleEntity(best);
+        // Entity at that tile?
+        const entity = Tilemap.getEntityAt(checkX, checkY);
+        if (entity) {
+            console.log('[Player] Interact:', entity.id, entity.type);
+            handleEntity(entity);
+            return true;
+        }
+
+        // Closed door?
+        const tile = Tilemap.getTile(checkX, checkY);
+        if (tile === 11) {  // DOOR_CLOSED
+            console.log('[Player] Door is locked');
+        }
+
+        return false;
     }
     
     function handleEntity(entity) {
@@ -297,14 +305,16 @@ const Player = (function() {
             ctx.fillRect(x + 9, y + 13, 3, 3);
         }
         
-        // [E] prompt — same 1.5-tile radius as tryInteract
+        // [E] prompt — show when entity is in the tile directly ahead
         if (typeof Tilemap !== 'undefined') {
-            const RADIUS = 1.5;
-            const pcx = x / TILE + 0.5, pcy = y / TILE + 0.5;
-            const nearby = Tilemap.getEntities().some(e =>
-                Math.hypot(e.x + 0.5 - pcx, e.y + 0.5 - pcy) <= RADIUS
-            );
-            if (nearby) {
+            let fx = Math.floor((x + CONFIG.TILE / 2) / CONFIG.TILE);
+            let fy = Math.floor((y + CONFIG.TILE / 2) / CONFIG.TILE);
+            if (facing === 'up')    fy -= 1;
+            else if (facing === 'down')  fy += 1;
+            else if (facing === 'left')  fx -= 1;
+            else if (facing === 'right') fx += 1;
+
+            if (Tilemap.getEntityAt(fx, fy)) {
                 ctx.fillStyle = P.uiBg + 'dd';
                 ctx.fillRect(x + 4, y - 10, 12, 10);
                 ctx.strokeStyle = P.uiBorder;

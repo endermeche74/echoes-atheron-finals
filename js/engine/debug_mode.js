@@ -280,10 +280,10 @@ const DebugMode = (function () {
 
         // Shortcut hints at bottom
         octx.fillStyle = 'rgba(8,6,18,0.7)';
-        octx.fillRect(2, 228, 316, 10);
+        octx.fillRect(2, CONFIG.CANVAS_H - 12, CONFIG.CANVAS_W - 4, 10);
         octx.fillStyle = '#585470';
         octx.font = '6px monospace';
-        octx.fillText('F2:NoClip  F3:Grid  F4:Coll  F5:Maps  F6:FreeCam  1-9:FavMap', 4, 236);
+        octx.fillText('F2:NoClip  F3:Grid  F4:Coll  F5:Maps  F6:FreeCam  1-9:FavMap', 4, CONFIG.CANVAS_H - 4);
     }
 
     // ─────────────────────────────────────────────────
@@ -651,3 +651,52 @@ const DebugMode = (function () {
     };
 
 })();
+
+// ─────────────────────────────────────────────────
+//  CONFIG CHANGE TEST (callable from browser console)
+// ─────────────────────────────────────────────────
+window.testConfigChange = function() {
+    console.log('=== TEST CONFIG CHANGE ===');
+
+    const origTile  = CONFIG.TILE;
+    const origW     = CONFIG.CANVAS_W;
+    const origH     = CONFIG.CANVAS_H;
+    const origGridW = CONFIG.GRID_W;
+    const origGridH = CONFIG.GRID_H;
+    const area      = (typeof Tilemap !== 'undefined' && Tilemap.getCurrentArea)
+                      ? Tilemap.getCurrentArea() : null;
+
+    console.log('Test 1: Normal values (TILE=16, 320×240)');
+    console.log('  TILE:', origTile, '  W:', origW, '  H:', origH);
+
+    console.log('Test 2: Double size (TILE=32, 640×480)');
+    CONFIG.TILE     = 32;
+    CONFIG.CANVAS_W = 640;
+    CONFIG.CANVAS_H = 480;
+    CONFIG.GRID_W   = 20;
+    CONFIG.GRID_H   = 15;
+
+    if (area && typeof Tilemap !== 'undefined') {
+        Tilemap.loadArea(area);
+        if (typeof Camera !== 'undefined' && Camera.snapToPlayer) Camera.snapToPlayer();
+    }
+
+    console.log('  SpriteScaler.getScale():', typeof SpriteScaler !== 'undefined' ? SpriteScaler.getScale() : 'N/A');
+
+    setTimeout(function() {
+        console.log('Test 3: Restoring original values');
+        CONFIG.TILE     = origTile;
+        CONFIG.CANVAS_W = origW;
+        CONFIG.CANVAS_H = origH;
+        CONFIG.GRID_W   = origGridW;
+        CONFIG.GRID_H   = origGridH;
+
+        if (area && typeof Tilemap !== 'undefined') {
+            Tilemap.loadArea(area);
+            if (typeof Camera !== 'undefined' && Camera.snapToPlayer) Camera.snapToPlayer();
+        }
+
+        console.log('  SpriteScaler.getScale():', typeof SpriteScaler !== 'undefined' ? SpriteScaler.getScale() : 'N/A');
+        console.log('=== TEST COMPLETE ===');
+    }, 3000);
+};

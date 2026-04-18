@@ -590,13 +590,6 @@ const DebugMode = (function () {
                 }
         }
 
-        // Auto-disable if switching back to text mode
-        if (e.key === 'm' || e.key === 'M') {
-            if (enabled && typeof Engine !== 'undefined' && !Engine.isCanvasMode()) {
-                enabled = false;
-                closeMapSelector();
-            }
-        }
     });
 
     document.addEventListener('keyup', (e) => {

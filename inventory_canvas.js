@@ -337,10 +337,10 @@ const InventoryCanvas = (function() {
         if (!active) return;
         
         const keyMap = {
-            'ArrowUp': 'up', 'KeyW': 'up', 'KeyZ': 'up',
+            'ArrowUp': 'up', 'KeyZ': 'up',
             'ArrowDown': 'down', 'KeyS': 'down',
-            'ArrowLeft': 'left',
-            'ArrowRight': 'right',
+            'ArrowLeft': 'left', 'KeyQ': 'left',
+            'ArrowRight': 'right', 'KeyD': 'right',
             'Enter': 'confirm', 'Space': 'confirm', 'KeyE': 'confirm',
             'Escape': 'cancel', 'KeyI': 'menu'
         };

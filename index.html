@@ -4,54 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Echoes of Aethon</title>
-  <link rel="stylesheet" href="css/style.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #08070f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    #canvas-container {
+      image-rendering: pixelated;
+    }
+  </style>
 </head>
 <body>
-
-<div id="app">
-
-  <header id="hdr">
-    <div class="logo">⚔ Echoes of Aethon</div>
-    <div class="hstats">
-      <div class="bw">
-        <span class="blabel hp-label">HP</span>
-        <div class="bar"><div class="bf hp-f" id="hpbar"></div></div>
-        <span class="bv" id="hpval"></span>
-      </div>
-      <div class="bw">
-        <span class="blabel mp-label">MP</span>
-        <div class="bar"><div class="bf mp-f" id="mpbar"></div></div>
-        <span class="bv" id="mpval"></span>
-      </div>
-      <span id="hgold"></span>
-      <span id="htime" style="font-size:10px;color:#aabb88"></span>
-      <span id="hloc"></span>
-    </div>
-    <div style="display:flex;gap:5px">
-      <button class="btn" style="font-size:10px;padding:3px 8px" onclick="saveGame()">💾 Save</button>
-      <button class="btn" style="font-size:10px;padding:3px 8px" onclick="loadGame()">📂 Load</button>
-    </div>
-  </header>
-
-  <nav id="tabs">
-    <button class="tab on" data-v="explore"   onclick="sv('explore')">⚔ Explore</button>
-    <button class="tab"    data-v="skills"    onclick="sv('skills')">🎓 Skills</button>
-    <button class="tab"    data-v="inventory" onclick="sv('inventory')">🎒 Items</button>
-    <button class="tab"    data-v="spellbook" onclick="sv('spellbook')">📖 Spells</button>
-    <button class="tab"    data-v="quests"    onclick="sv('quests')">📋 Quests</button>
-    <button class="tab"    data-v="map"       onclick="sv('map')">🗺 Map</button>
-    <button class="tab"    data-v="factions"  onclick="sv('factions')">⚑ Factions</button>
-  </nav>
-
-  <div id="body">
-    <main id="main"></main>
-    <aside id="side">
-      <div id="sinfo"></div>
-      <div id="slog"></div>
-    </aside>
-  </div>
-
-</div>
 
 <!-- DATA — order matters -->
 <script src="js/data/abilities.js"></script>
@@ -84,18 +52,17 @@
 <script src="js/engine/spritedata.js"></script>
 <script src="js/engine/sprite_integration.js"></script>
 
-<!-- After sprite system -->
+<!-- Effects & particles -->
 <script src="js/engine/effects.js"></script>
 <script src="js/engine/particles.js"></script>
 <script src="js/engine/damage_numbers.js"></script>
 <script src="js/engine/effects_integration.js"></script>
 <script src="js/engine/engine_effects_patch.js"></script>
 
-<!-- Lighting system (Phase 8) -->
+<!-- Lighting -->
 <script src="js/engine/lighting.js"></script>
 <script src="js/engine/lighting_integration.js"></script>
 <script src="js/engine/keyboard_layouts.js"></script>
-
 
 <!-- Combat (legacy base, patched over by combat_enhanced below) -->
 <script src="js/engine/combat_canvas.js"></script>
@@ -118,7 +85,7 @@
 <script src="js/engine/ui_polish.js"></script>
 <script src="js/engine/polish_integration.js"></script>
 
-<!-- SYSTEMS — order matters -->
+<!-- SYSTEMS -->
 <script src="js/audio.js"></script>
 <script src="js/systems/state.js"></script>
 <script src="js/systems/time.js"></script>
@@ -130,19 +97,6 @@
 <script src="js/systems/movements.js"></script>
 <script src="js/systems/quests.js"></script>
 <script src="js/systems/save.js"></script>
-
-<!-- UI — order matters, render.js must be last -->
-<script src="js/ui/render_explore.js"></script>
-<script src="js/ui/render_combats.js"></script>
-<script src="js/ui/render_dialogues.js"></script>
-<script src="js/ui/render_inventory.js"></script>
-<script src="js/ui/render_skills.js"></script>
-<script src="js/ui/render_spells.js"></script>
-<script src="js/ui/render_quests.js"></script>
-<script src="js/ui/render_maps.js"></script>
-<script src="js/ui/render_factions.js"></script>
-<script src="js/ui/render_saves.js"></script>
-<script src="js/ui/render.js"></script>
 
 <!-- ENTRY -->
 <script src="main.js"></script>

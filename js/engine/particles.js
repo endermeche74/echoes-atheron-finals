@@ -415,6 +415,33 @@ const Particles = (function() {
             }
         },
 
+        // ── Explosion ─────────────────────────────────────────
+        explosion: function(x, y) {
+            // Fire burst
+            emit({
+                x, y, spreadX: 12 * SC, spreadY: 12 * SC, count: 18,
+                speed: 140 * SC, speedVariance: 70 * SC,
+                angle: 0, angleVariance: Math.PI,
+                life: 0.6, lifeVariance: 0.3,
+                size: 6 * SC, sizeEnd: 0,
+                color: '#ff8800', colorEnd: '#ff2200',
+                alpha: 1, alphaEnd: 0,
+                gravity: -30 * SC, friction: 0.96, shape: 'circle'
+            });
+            // Debris chunks
+            emit({
+                x, y, spreadX: 8 * SC, spreadY: 8 * SC, count: 10,
+                speed: 100 * SC, speedVariance: 50 * SC,
+                angle: 0, angleVariance: Math.PI,
+                life: 0.8, lifeVariance: 0.3,
+                size: 4 * SC, sizeEnd: 0,
+                color: '#886633', alpha: 0.9, alphaEnd: 0,
+                gravity: 100 * SC, friction: 0.95, shape: 'square'
+            });
+            // Shockwave ring
+            presets.shockwave(x, y);
+        },
+
         // ── Impact (general hit) ──────────────────────────────
         impact: function(x, y, color = '#ffffff') {
             emit({
@@ -596,6 +623,8 @@ const Particles = (function() {
         footstep:     presets.footstep,
         splash:       presets.splash,
         impact:       presets.impact,
+
+        explosion:    presets.explosion,
 
         getActiveCount: () => active.length,
         getFootprintCount: () => footprints.length

@@ -275,36 +275,51 @@ const Engine = (function() {
         // Clear with void color
         ctx.fillStyle = PALETTE.void;
         ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        
-        // Save context for camera transform
+
+        // World-space pass (camera + shake + zoom)
         ctx.save();
-        
-        // Apply camera offset
+
+        // Screen shake + zoom pulse — applied before camera so they shake the whole world
+        if (typeof Effects !== 'undefined') {
+            const sh = Effects.getShakeOffset();
+            if (sh.x !== 0 || sh.y !== 0) ctx.translate(sh.x, sh.y);
+            Effects.applyZoom(ctx, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+        }
+
+        // Camera offset
         if (typeof Camera !== 'undefined') {
             const cam = Camera.getOffset();
             ctx.translate(-cam.x, -cam.y);
         }
-        
-        // Render tilemap
+
+        // Tilemap
         if (typeof Tilemap !== 'undefined') {
             Tilemap.render(ctx);
-        }
-        
-        // Render entities (NPCs, items)
-        if (typeof Tilemap !== 'undefined') {
             Tilemap.renderEntities(ctx);
         }
-        
-        // Render player
+
+        // Player
         if (typeof Player !== 'undefined') {
             Player.render(ctx);
         }
-        
-        // Restore context
+
+        // World-space particles and damage numbers (must be inside camera transform)
+        if (typeof Particles !== 'undefined') {
+            Particles.render(ctx);
+        }
+        if (typeof DamageNumbers !== 'undefined') {
+            DamageNumbers.render(ctx);
+        }
+
         ctx.restore();
-        
-        // Render UI overlay (not affected by camera)
+
+        // Screen-space UI (no camera transform)
         renderUI();
+
+        // Screen-space overlay effects: flash, vignette, wipe, fade — drawn last
+        if (typeof Effects !== 'undefined') {
+            Effects.render(ctx, CANVAS_WIDTH, CANVAS_HEIGHT);
+        }
     }
 
     function renderUI() {
@@ -330,12 +345,20 @@ const Engine = (function() {
         ctx.font = '14px monospace';
         ctx.fillText(areaName, 10, 20);
 
-        // Controls hint — bottom left
+        // HP/MP bars — bottom left, using UI_HD if available
+        if (typeof P !== 'undefined' && typeof UI_HD !== 'undefined') {
+            const hp = P.hp || 0, maxHp = P.maxHp || P.hpMax || 1;
+            const mp = P.mp || 0, maxMp = P.maxMp || P.mpMax || 1;
+            UI_HD.drawBar(ctx, 4, CANVAS_HEIGHT - 44, 120, 12, hp, maxHp, 'health', 'HP');
+            UI_HD.drawBar(ctx, 4, CANVAS_HEIGHT - 28, 120, 12, mp, maxMp, 'mana', 'MP');
+        }
+
+        // Controls hint — bottom center
         ctx.fillStyle = 'rgba(21, 19, 24, 0.6)';
-        ctx.fillRect(4, CANVAS_HEIGHT - 28, 260, 24);
-        ctx.fillStyle = '#808080';
-        ctx.font = '12px monospace';
-        ctx.fillText('ZQSD:Move  E:Interact  I:Inventory', 8, CANVAS_HEIGHT - 12);
+        ctx.fillRect(130, CANVAS_HEIGHT - 18, 240, 14);
+        ctx.fillStyle = '#707070';
+        ctx.font = '10px monospace';
+        ctx.fillText('ZQSD:Move  E:Talk/Attack  I:Bag  F1:Debug', 134, CANVAS_HEIGHT - 7);
 
         // Minimap
         if (typeof Minimap !== 'undefined') {

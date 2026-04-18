@@ -30,10 +30,18 @@
         // Call this before rendering game content
         preRender: function(ctx) {
             if (!this.enabled) return;
-            
-            // Apply screen shake
+
+            ctx.save();
+
+            // Zoom pulse (crits / level-ups) — centered on canvas
+            if (typeof Effects !== 'undefined' && Effects.applyZoom) {
+                const cw = typeof CONFIG !== 'undefined' ? CONFIG.CANVAS_W : 624;
+                const ch = typeof CONFIG !== 'undefined' ? CONFIG.CANVAS_H : 336;
+                Effects.applyZoom(ctx, cw / 2, ch / 2);
+            }
+
+            // Screen shake
             if (typeof Effects !== 'undefined') {
-                ctx.save();
                 Effects.applyShake(ctx);
             }
         },
@@ -52,10 +60,7 @@
                 DamageNumbers.render(ctx);
             }
             
-            // Restore from shake
-            if (typeof Effects !== 'undefined') {
                 ctx.restore();
-            }
         },
         
         // Call this after ALL rendering (for screen effects)
@@ -203,7 +208,8 @@
                     }
                     
                     if (typeof Particles !== 'undefined') {
-                        Particles.footstep(x, y, tileType);
+                        const facing = Player.getFacing ? Player.getFacing() : 'down';
+                        Particles.footstep(x, y, tileType, facing);
                     }
                 }
             } else {
@@ -296,18 +302,13 @@
         
         Engine.triggerAreaChange = function(areaId) {
             if (typeof Effects !== 'undefined') {
+                // Alternate wipe and fade for variety
+                const useWipe = (Math.random() < 0.5);
                 Effects.areaTransition(() => {
-                    // Clear particles when changing areas
-                    if (typeof Particles !== 'undefined') {
-                        Particles.clear();
-                    }
-                    if (typeof DamageNumbers !== 'undefined') {
-                        DamageNumbers.clear();
-                    }
-                    
-                    // Do the actual area change
+                    if (typeof Particles !== 'undefined') Particles.clear();
+                    if (typeof DamageNumbers !== 'undefined') DamageNumbers.clear();
                     originalTriggerAreaChange(areaId);
-                });
+                }, useWipe);
             } else {
                 originalTriggerAreaChange(areaId);
             }
@@ -335,7 +336,13 @@
             
             if (typeof Particles !== 'undefined') {
                 Particles.blood(enemyX, enemyY, 0);
-                Particles.impact(enemyX, enemyY);
+                Particles.shockwave(enemyX, enemyY);
+                if (isCrit) {
+                    // Slash trail from player toward enemy
+                    const px = typeof Player !== 'undefined' ? Player.getX() : enemyX - 48;
+                    const py = typeof Player !== 'undefined' ? Player.getY() : enemyY;
+                    Particles.slashTrail(px, py, enemyX - px, enemyY - py);
+                }
             }
             
             if (typeof DamageNumbers !== 'undefined') {
@@ -366,13 +373,11 @@
         },
         
         // Enemy dies
-        enemyDeath: function(enemyX, enemyY, color = '#555555') {
+        enemyDeath: function(enemyX, enemyY, color = '#886644') {
             if (typeof Effects !== 'undefined') {
-                Effects.startShake(3, 0.15);
-            }
-            
-            if (typeof Particles !== 'undefined') {
-                Particles.dissolve(enemyX, enemyY, color);
+                Effects.presets.enemyDeath(enemyX, enemyY);
+            } else if (typeof Particles !== 'undefined') {
+                Particles.enemyDissolve(enemyX, enemyY, color);
             }
         },
         

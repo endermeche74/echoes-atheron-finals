@@ -17,25 +17,8 @@
     const CANVAS_HEIGHT = CONFIG.CANVAS_H;
     const PALETTE = Engine.PALETTE;
     
-    // Store original functions if they exist
-    const originalGetCtx = Engine.getCtx;
-    
-    // Track if we're in canvas mode
+    // Track if effects are enabled
     let effectsEnabled = true;
-    
-    // Override the internal render (we need to inject into game loop)
-    // Since Engine uses requestAnimationFrame internally, we'll wrap it
-    
-    const originalRAF = window.requestAnimationFrame;
-    let frameCount = 0;
-    
-    window.requestAnimationFrame = function(callback) {
-        return originalRAF(function(timestamp) {
-            // Inject our effects update before the callback
-            // This is called every frame
-            callback(timestamp);
-        });
-    };
     
     // Create a render overlay that runs after Engine's render
     const effectsOverlay = document.createElement('canvas');
@@ -64,42 +47,32 @@
         return false;
     }
     
-    // Render effects on overlay
-    function renderEffects() {
-        if (!effectsEnabled) return;
-        if (!Engine.isCanvasMode()) return;
-        
-        const ctx = effectsOverlay.getContext('2d');
-        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        
-        // Screen effects
-        if (typeof Effects !== 'undefined') {
-            Effects.render(ctx, CANVAS_WIDTH, CANVAS_HEIGHT);
-        }
-    }
-    
-    // Hook into animation frame
+    // Update loop — effects/particles/damage-numbers only.
+    // Rendering is done by engine.js directly on the main canvas.
     let lastTime = 0;
     function effectsLoop(currentTime) {
-        const dt = (currentTime - lastTime) / 1000;
+        const dt = Math.min((currentTime - lastTime) / 1000, 0.1);
         lastTime = currentTime;
-        
-        if (Engine.isCanvasMode()) {
-            // Update effects
+
+        if (Engine.isCanvasMode() && effectsEnabled) {
+            let scaledDt = dt;
             if (typeof Effects !== 'undefined') {
-                Effects.update(dt);
+                scaledDt = Effects.update(dt);
             }
             if (typeof Particles !== 'undefined') {
-                Particles.update(dt);
+                Particles.update(scaledDt);
             }
             if (typeof DamageNumbers !== 'undefined') {
-                DamageNumbers.update(dt);
+                DamageNumbers.update(scaledDt);
             }
-            
-            // Render overlay
-            renderEffects();
         }
-        
+
+        // Keep overlay canvas clear (engine.js renders effects on main canvas)
+        if (effectsOverlay) {
+            const ectx = effectsOverlay.getContext('2d');
+            ectx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        }
+
         requestAnimationFrame(effectsLoop);
     }
     
@@ -129,14 +102,15 @@
         testFlash: () => Effects.startFlash('#ff0000', 0.2, 0.5),
         testFade: () => Effects.fadeToBlack(0.5, () => Effects.fadeFromBlack(0.5)),
         testParticles: () => {
-            const x = Player ? Player.getX() + 8 : 160;
-            const y = Player ? Player.getY() + 8 : 120;
+            const x = typeof Player !== 'undefined' ? Player.getX() + 24 : CONFIG.CANVAS_W / 2;
+            const y = typeof Player !== 'undefined' ? Player.getY() + 24 : CONFIG.CANVAS_H / 2;
             Particles.blood(x, y);
             Particles.sparks(x, y);
+            Particles.shockwave(x, y);
         },
         testDamage: () => {
-            const x = Player ? Player.getX() + 8 : 160;
-            const y = Player ? Player.getY() : 120;
+            const x = typeof Player !== 'undefined' ? Player.getX() + 24 : CONFIG.CANVAS_W / 2;
+            const y = typeof Player !== 'undefined' ? Player.getY()      : CONFIG.CANVAS_H / 2;
             DamageNumbers.damage(x, y, 42);
             DamageNumbers.crit(x + 20, y - 10, 99);
         },

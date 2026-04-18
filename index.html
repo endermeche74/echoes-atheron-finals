@@ -97,14 +97,14 @@
 <script src="js/engine/keyboard_layouts.js"></script>
 
 
-<!-- HD UI + Combat + Inventory overlays -->
+<!-- Combat (legacy base, patched over by combat_enhanced below) -->
+<script src="js/engine/combat_canvas.js"></script>
+<script src="js/engine/combat_canvas_integration.js"></script>
+
+<!-- HD UI + Combat + Inventory overlays (load last so triggerCombat → HD system) -->
 <script src="js/engine/ui_hd.js"></script>
 <script src="js/engine/combat_enhanced.js"></script>
 <script src="js/engine/inventory_canvas.js"></script>
-
-<!-- Combat -->
-<script src="js/engine/combat_canvas.js"></script>
-<script src="js/engine/combat_canvas_integration.js"></script>
 
 <!-- Audio -->
 <script src="js/engine/audio.js"></script>

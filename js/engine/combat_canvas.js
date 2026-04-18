@@ -577,9 +577,18 @@ const CombatCanvas = (function() {
         render,
         isActive: () => active,
         setCallbacks,
-        
-        // For integration
-        handleInput
+        handleInput,
+
+        // State snapshot for external renderers
+        getState: () => ({
+            player, enemy, phase, turn,
+            menuIndex, limbIndex,
+            message: currentMessage,
+            messageTimer,
+            actions: ACTIONS,
+            limbs: LIMBS,
+            limbOrder: LIMB_ORDER
+        })
     };
     
 })();

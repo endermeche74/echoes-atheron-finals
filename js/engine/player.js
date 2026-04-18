@@ -208,11 +208,35 @@ const Player = (function() {
 
     function checkTransitions() {
         if (typeof Tilemap === 'undefined' || transitionCooldown > 0) return;
-        const transition = Tilemap.getTransitionAt(tx, ty);
-        if (transition) {
-            transitionCooldown = 1.0;  // 1s grace period after loading new area
-            Engine.triggerAreaChange(transition.target, transition.spawnX, transition.spawnY);
-        }
+
+        // Recompute tile position fresh from pixel position
+        const ptx = Math.floor((x + CONFIG.TILE / 2) / CONFIG.TILE);
+        const pty = Math.floor((y + CONFIG.TILE / 2) / CONFIG.TILE);
+
+        const transition = Tilemap.getTransitionAt(ptx, pty);
+        if (!transition) return;
+
+        console.log('[Player] Transition to:', transition.target, 'spawn:', transition.spawnX, transition.spawnY);
+        transitionCooldown = 1.0;
+
+        // Resolve spawn coords (fall back to map default if missing)
+        const spawnX = transition.spawnX !== undefined ? transition.spawnX : 5;
+        const spawnY = transition.spawnY !== undefined ? transition.spawnY : 5;
+
+        // Load new area (updates camera bounds, entities, tile data)
+        Tilemap.loadArea(transition.target);
+
+        // Sync game state area
+        if (typeof P !== 'undefined') P.area = transition.target;
+
+        // Place player at spawn (tile → pixel)
+        tx = spawnX;
+        ty = spawnY;
+        x  = tx * CONFIG.TILE;
+        y  = ty * CONFIG.TILE;
+
+        // Snap camera to new position
+        if (typeof Camera !== 'undefined') Camera.snapToPlayer();
     }
     
     // === RENDER ===

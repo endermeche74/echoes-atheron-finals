@@ -42,7 +42,7 @@
                     console.log('[Combat] Victory vs', enemy.name);
                     // Give XP/gold
                     if (typeof CombatEffects !== 'undefined') {
-                        const px = 160, py = 120;
+                        const px = CONFIG.CANVAS_W / 2, py = CONFIG.CANVAS_H / 2;
                         CombatEffects.gainXP(px, py - 20, enemy.maxHp);
                         CombatEffects.gainGold(px, py, Math.floor(enemy.maxHp / 2));
                     }
@@ -107,10 +107,11 @@
         requestAnimationFrame(combatLoop);
     }
     
-    // === TEST FUNCTION ===
+    // === TEST FUNCTIONS ===
     window.testCombat = function(enemyId = 'bandit') {
         Engine.triggerCombat(enemyId);
     };
+    window.testEnhancedCombat = window.testCombat;  // alias
     
     // Init
     function init() {

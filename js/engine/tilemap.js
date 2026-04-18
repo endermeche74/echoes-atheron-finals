@@ -446,69 +446,69 @@ const Tilemap = (function() {
         }
     }
     
+    // Map entity sprite ids to SPRITES_48 names
+    const NPC_SPRITES    = { merchant: 'merchant', guard: 'guard', elder: 'elder', smith: 'smith', monk: 'monk' };
+    const ENEMY_SPRITES  = { enemy_wolf: 'wolf', enemy_bandit: 'bandit', enemy_undead: 'undead',
+                              enemy_spirit: 'spirit', enemy_boss: 'boss_guardian' };
+    const ITEM_SPRITES   = { potion: 'potion_health', potion_health: 'potion_health',
+                              potion_mana: 'potion_mana', sword: 'sword', key: 'key', chest: 'chest' };
+
     function renderNPC(ctx, entity, px, py) {
-        SpriteScaler.renderScaled(ctx, function(c, ox, oy) {
+        const spriteName = NPC_SPRITES[entity.sprite] || NPC_SPRITES[entity.id] || 'merchant';
+        if (typeof SPRITES_48 !== 'undefined' && SPRITES_48.has(spriteName)) {
+            SPRITES_48.draw(spriteName, ctx, px, py, 0);
+        } else {
+            SpriteScaler.renderScaled(ctx, function(c, ox, oy) {
+                const P = Engine.PALETTE;
+                c.fillStyle = 'rgba(0,0,0,0.3)';
+                c.beginPath(); c.ellipse(ox+8,oy+14,5,2,0,0,Math.PI*2); c.fill();
+                c.fillStyle = entity.color || P.npc;
+                c.fillRect(ox+3,oy+5,10,9);
+                c.fillStyle = '#a09080'; c.fillRect(ox+4,oy+1,8,6);
+                c.fillStyle = '#202020'; c.fillRect(ox+5,oy+3,2,2); c.fillRect(ox+9,oy+3,2,2);
+                if (entity.hasQuest) { c.fillStyle=P.gold; c.font='bold 10px monospace'; c.fillText('!',ox+6,oy-2); }
+            }, px, py);
+        }
+        // Quest marker (native 48px space)
+        if (entity.hasQuest && typeof SPRITES_48 !== 'undefined') {
             const P = Engine.PALETTE;
-
-            c.fillStyle = 'rgba(0,0,0,0.3)';
-            c.beginPath();
-            c.ellipse(ox + 8, oy + 14, 5, 2, 0, 0, Math.PI * 2);
-            c.fill();
-
-            c.fillStyle = entity.color || P.npc;
-            c.fillRect(ox + 3, oy + 5, 10, 9);
-
-            c.fillStyle = '#a09080';
-            c.fillRect(ox + 4, oy + 1, 8, 6);
-
-            c.fillStyle = '#202020';
-            c.fillRect(ox + 5, oy + 3, 2, 2);
-            c.fillRect(ox + 9, oy + 3, 2, 2);
-
-            if (entity.hasQuest) {
-                c.fillStyle = P.gold;
-                c.font = 'bold 10px monospace';
-                c.fillText('!', ox + 6, oy - 2);
-            }
-        }, px, py);
+            ctx.fillStyle = P.gold;
+            ctx.font = 'bold 14px monospace';
+            ctx.fillText('!', px + 20, py - 4);
+        }
     }
-    
+
     function renderEnemy(ctx, entity, px, py) {
-        SpriteScaler.renderScaled(ctx, function(c, ox, oy) {
-            const P = Engine.PALETTE;
-
-            c.fillStyle = 'rgba(0,0,0,0.4)';
-            c.beginPath();
-            c.ellipse(ox + 8, oy + 14, 6, 2, 0, 0, Math.PI * 2);
-            c.fill();
-
-            c.fillStyle = entity.color || P.enemy;
-            c.fillRect(ox + 2, oy + 4, 12, 10);
-
-            c.fillStyle = '#3a2020';
-            c.fillRect(ox + 3, oy + 1, 10, 5);
-
-            c.fillStyle = '#ff3030';
-            c.fillRect(ox + 4, oy + 2, 2, 2);
-            c.fillRect(ox + 10, oy + 2, 2, 2);
-        }, px, py);
+        const spriteName = ENEMY_SPRITES[entity.sprite] || 'bandit';
+        if (typeof SPRITES_48 !== 'undefined' && SPRITES_48.has(spriteName)) {
+            SPRITES_48.draw(spriteName, ctx, px, py, 0);
+        } else {
+            SpriteScaler.renderScaled(ctx, function(c, ox, oy) {
+                const P = Engine.PALETTE;
+                c.fillStyle = 'rgba(0,0,0,0.4)';
+                c.beginPath(); c.ellipse(ox+8,oy+14,6,2,0,0,Math.PI*2); c.fill();
+                c.fillStyle = entity.color || P.enemy;
+                c.fillRect(ox+2,oy+4,12,10);
+                c.fillStyle = '#3a2020'; c.fillRect(ox+3,oy+1,10,5);
+                c.fillStyle = '#ff3030'; c.fillRect(ox+4,oy+2,2,2); c.fillRect(ox+10,oy+2,2,2);
+            }, px, py);
+        }
     }
-    
+
     function renderItem(ctx, entity, px, py) {
-        SpriteScaler.renderScaled(ctx, function(c, ox, oy) {
-            const P = Engine.PALETTE;
-
-            c.fillStyle = 'rgba(120, 110, 60, 0.3)';
-            c.beginPath();
-            c.arc(ox + 8, oy + 10, 6, 0, Math.PI * 2);
-            c.fill();
-
-            c.fillStyle = entity.color || P.item;
-            c.fillRect(ox + 5, oy + 6, 6, 6);
-
-            c.fillStyle = P.uiHighlight;
-            c.fillRect(ox + 6, oy + 4, 2, 2);
-        }, px, py);
+        const spriteName = ITEM_SPRITES[entity.sprite] || ITEM_SPRITES[entity.id] || 'potion_health';
+        if (typeof SPRITES_48 !== 'undefined' && SPRITES_48.has(spriteName)) {
+            SPRITES_48.draw(spriteName, ctx, px, py, 0);
+        } else {
+            SpriteScaler.renderScaled(ctx, function(c, ox, oy) {
+                const P = Engine.PALETTE;
+                c.fillStyle = 'rgba(120,110,60,0.3)';
+                c.beginPath(); c.arc(ox+8,oy+10,6,0,Math.PI*2); c.fill();
+                c.fillStyle = entity.color || P.item;
+                c.fillRect(ox+5,oy+6,6,6);
+                c.fillStyle = P.uiHighlight; c.fillRect(ox+6,oy+4,2,2);
+            }, px, py);
+        }
     }
     
     // === PUBLIC API ===

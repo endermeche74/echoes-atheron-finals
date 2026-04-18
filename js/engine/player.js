@@ -249,88 +249,85 @@ const Player = (function() {
     
     // === RENDER ===
     function render(ctx) {
-        const bobY = isMoving ? Math.sin(animFrame * Math.PI / 2) * 1 : 0;
-
-        // Interact prompt check (tile-based, scale-independent)
+        // Interact prompt check
         let showPrompt = false;
         if (typeof Tilemap !== 'undefined') {
             let fx = Math.floor((x + CONFIG.TILE / 2) / CONFIG.TILE);
             let fy = Math.floor((y + CONFIG.TILE / 2) / CONFIG.TILE);
-            if (facing === 'up')    fy -= 1;
+            if (facing === 'up')         fy -= 1;
             else if (facing === 'down')  fy += 1;
             else if (facing === 'left')  fx -= 1;
             else if (facing === 'right') fx += 1;
             showPrompt = !!Tilemap.getEntityAt(fx, fy);
         }
 
-        // All drawing in 16×16 space; SpriteScaler handles the translate+scale
-        SpriteScaler.renderScaled(ctx, function(c, ox, oy) {
-            const PAL = Engine.PALETTE;
-
-            // Shadow
-            c.fillStyle = 'rgba(0,0,0,0.45)';
-            c.beginPath();
-            c.ellipse(ox + 8, oy + 15, 6, 2, 0, 0, Math.PI * 2);
-            c.fill();
-
-            // Dark outline
-            c.fillStyle = '#111';
-            c.fillRect(ox + 2, oy + 3 - bobY, 12, 12);
-            c.fillRect(ox + 3, oy     - bobY, 10,  8);
-
-            // Body
-            c.fillStyle = '#c8a878';
-            c.fillRect(ox + 3, oy + 4 - bobY, 10, 10);
-
-            // Cloak
-            c.fillStyle = '#7a5c3a';
-            c.fillRect(ox + 4, oy + 6 - bobY, 8, 7);
-
-            // Head
-            c.fillStyle = '#e0c090';
-            c.fillRect(ox + 4, oy + 1 - bobY, 8, 6);
-
-            // Eyes
-            c.fillStyle = '#1a1a1a';
-            switch (facing) {
-                case 'down':
+        // Use native 48×48 sprites when available
+        if (typeof SPRITES_48 !== 'undefined') {
+            const spriteName = 'player_' + facing;
+            SPRITES_48.draw(spriteName, ctx, x, y, animFrame);
+        } else {
+            // Fallback: SpriteScaler 16→48 path
+            const bobY = isMoving ? Math.sin(animFrame * Math.PI / 2) * 1 : 0;
+            SpriteScaler.renderScaled(ctx, function(c, ox, oy) {
+                const PAL = Engine.PALETTE;
+                c.fillStyle = 'rgba(0,0,0,0.45)';
+                c.beginPath();
+                c.ellipse(ox + 8, oy + 15, 6, 2, 0, 0, Math.PI * 2);
+                c.fill();
+                c.fillStyle = '#111';
+                c.fillRect(ox + 2, oy + 3 - bobY, 12, 12);
+                c.fillRect(ox + 3, oy     - bobY, 10,  8);
+                c.fillStyle = '#c8a878';
+                c.fillRect(ox + 3, oy + 4 - bobY, 10, 10);
+                c.fillStyle = '#7a5c3a';
+                c.fillRect(ox + 4, oy + 6 - bobY, 8, 7);
+                c.fillStyle = '#e0c090';
+                c.fillRect(ox + 4, oy + 1 - bobY, 8, 6);
+                c.fillStyle = '#1a1a1a';
+                if (facing === 'down') {
                     c.fillRect(ox + 5, oy + 3 - bobY, 2, 2);
                     c.fillRect(ox + 9, oy + 3 - bobY, 2, 2);
-                    break;
-                case 'up':
+                } else if (facing === 'up') {
                     c.fillStyle = '#8a7060';
                     c.fillRect(ox + 5, oy + 2 - bobY, 6, 3);
-                    break;
-                case 'left':
+                } else if (facing === 'left') {
                     c.fillRect(ox + 4, oy + 3 - bobY, 2, 2);
-                    break;
-                case 'right':
+                } else {
                     c.fillRect(ox + 10, oy + 3 - bobY, 2, 2);
-                    break;
-            }
+                }
+                c.fillStyle = '#4a3a28';
+                if (isMoving) {
+                    const lo = (animFrame % 2) * 3 - 1;
+                    c.fillRect(ox + 4, oy + 13, 3, 3);
+                    c.fillRect(ox + 9 + lo, oy + 13, 3, 3);
+                } else {
+                    c.fillRect(ox + 4, oy + 13, 3, 3);
+                    c.fillRect(ox + 9, oy + 13, 3, 3);
+                }
+                if (showPrompt) {
+                    c.fillStyle = PAL.uiBg + 'dd';
+                    c.fillRect(ox + 4, oy - 10, 12, 10);
+                    c.strokeStyle = PAL.uiBorder;
+                    c.strokeRect(ox + 4, oy - 10, 12, 10);
+                    c.fillStyle = PAL.uiHighlight;
+                    c.font = '8px monospace';
+                    c.fillText('E', ox + 7, oy - 3);
+                }
+            }, x, y);
+        }
 
-            // Legs
-            c.fillStyle = '#4a3a28';
-            if (isMoving) {
-                const legOffset = (animFrame % 2) * 3 - 1;
-                c.fillRect(ox + 4,            oy + 13, 3, 3);
-                c.fillRect(ox + 9 + legOffset, oy + 13, 3, 3);
-            } else {
-                c.fillRect(ox + 4, oy + 13, 3, 3);
-                c.fillRect(ox + 9, oy + 13, 3, 3);
-            }
-
-            // [E] prompt
-            if (showPrompt) {
-                c.fillStyle = PAL.uiBg + 'dd';
-                c.fillRect(ox + 4, oy - 10, 12, 10);
-                c.strokeStyle = PAL.uiBorder;
-                c.strokeRect(ox + 4, oy - 10, 12, 10);
-                c.fillStyle = PAL.uiHighlight;
-                c.font = '8px monospace';
-                c.fillText('E', ox + 7, oy - 3);
-            }
-        }, x, y);
+        // [E] prompt (SPRITES_48 path)
+        if (showPrompt && typeof SPRITES_48 !== 'undefined') {
+            const PAL = Engine.PALETTE;
+            ctx.fillStyle = PAL.uiBg + 'dd';
+            ctx.fillRect(x + 14, y - 12, 20, 12);
+            ctx.strokeStyle = PAL.uiBorder;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x + 14, y - 12, 20, 12);
+            ctx.fillStyle = PAL.uiHighlight;
+            ctx.font = '10px monospace';
+            ctx.fillText('[E]', x + 16, y - 3);
+        }
     }
     
     // === PUBLIC API ===

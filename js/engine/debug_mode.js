@@ -366,7 +366,6 @@ const DebugMode = (function () {
         if (!container) return;
 
         const rect = container.getBoundingClientRect();
-        // Screen position → internal canvas coords (320×240 space)
         const sx = (e.clientX - rect.left) / rect.width  * CONFIG.CANVAS_W;
         const sy = (e.clientY - rect.top)  / rect.height * CONFIG.CANVAS_H;
 
@@ -666,25 +665,23 @@ window.testConfigChange = function() {
     const area      = (typeof Tilemap !== 'undefined' && Tilemap.getCurrentArea)
                       ? Tilemap.getCurrentArea() : null;
 
-    console.log('Test 1: Normal values (TILE=16, 320×240)');
-    console.log('  TILE:', origTile, '  W:', origW, '  H:', origH);
+    console.log('Current values — TILE:', origTile, ' W:', origW, ' H:', origH,
+                ' Scale:', typeof SpriteScaler !== 'undefined' ? SpriteScaler.getScale() : 'N/A');
 
-    console.log('Test 2: Double size (TILE=32, 640×480)');
-    CONFIG.TILE     = 32;
-    CONFIG.CANVAS_W = 640;
-    CONFIG.CANVAS_H = 480;
-    CONFIG.GRID_W   = 20;
-    CONFIG.GRID_H   = 15;
+    // Temporarily halve tile size
+    console.log('Test: halved tile (TILE=24, 312×168, 13×7)');
+    CONFIG.TILE     = 24;
+    CONFIG.CANVAS_W = 312;
+    CONFIG.CANVAS_H = 168;
 
     if (area && typeof Tilemap !== 'undefined') {
         Tilemap.loadArea(area);
         if (typeof Camera !== 'undefined' && Camera.snapToPlayer) Camera.snapToPlayer();
     }
-
     console.log('  SpriteScaler.getScale():', typeof SpriteScaler !== 'undefined' ? SpriteScaler.getScale() : 'N/A');
 
     setTimeout(function() {
-        console.log('Test 3: Restoring original values');
+        console.log('Restoring original values (TILE=' + origTile + ', ' + origW + '×' + origH + ')');
         CONFIG.TILE     = origTile;
         CONFIG.CANVAS_W = origW;
         CONFIG.CANVAS_H = origH;
@@ -695,8 +692,37 @@ window.testConfigChange = function() {
             Tilemap.loadArea(area);
             if (typeof Camera !== 'undefined' && Camera.snapToPlayer) Camera.snapToPlayer();
         }
-
         console.log('  SpriteScaler.getScale():', typeof SpriteScaler !== 'undefined' ? SpriteScaler.getScale() : 'N/A');
         console.log('=== TEST COMPLETE ===');
     }, 3000);
+};
+
+window.testAllMaps = function() {
+    if (typeof Maps === 'undefined' || !Maps.list) {
+        console.warn('[testAllMaps] Maps.list() not available');
+        return;
+    }
+    const mapList = Maps.list();
+    console.log('=== TEST ALL MAPS (' + mapList.length + ' total) ===');
+
+    let idx = 0;
+    function nextMap() {
+        if (idx >= mapList.length) {
+            console.log('=== ALL MAPS TESTED ===');
+            return;
+        }
+        const id = mapList[idx++];
+        try {
+            if (typeof Tilemap !== 'undefined') Tilemap.loadArea(id);
+            if (typeof Camera !== 'undefined') Camera.snapToPlayer();
+            const w = typeof Tilemap !== 'undefined' ? Tilemap.getWidth() : '?';
+            const h = typeof Tilemap !== 'undefined' ? Tilemap.getHeight() : '?';
+            const ents = typeof Tilemap !== 'undefined' && Tilemap.getEntities ? Tilemap.getEntities().length : '?';
+            console.log('[OK] ' + id + '  ' + w + '×' + h + '  entities:' + ents);
+        } catch (e) {
+            console.error('[FAIL] ' + id + '  ' + e.message);
+        }
+        setTimeout(nextMap, 200);
+    }
+    nextMap();
 };

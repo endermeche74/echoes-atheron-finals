@@ -93,8 +93,8 @@ const UIPolish = (function() {
     function renderInteractPrompt(ctx, camX, camY) {
         if (!interactTarget) return;
         
-        const sx = interactTarget.x * 16 + 8 - camX;
-        const sy = interactTarget.y * 16 - 12 - camY;
+        const sx = interactTarget.x * CONFIG.TILE + CONFIG.TILE/2 - camX;
+        const sy = interactTarget.y * CONFIG.TILE - 12 - camY;
         
         // Box
         ctx.fillStyle = 'rgba(0,0,0,0.8)';

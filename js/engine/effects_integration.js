@@ -191,7 +191,7 @@
                 if (footstepTimer >= FOOTSTEP_INTERVAL) {
                     footstepTimer = 0;
                     const x = Player.getX() + 8;
-                    const y = Player.getY() + 16;
+                    const y = Player.getY() + CONFIG.TILE;
                     
                     // Determine tile type for particle color
                     let tileType = 'stone';

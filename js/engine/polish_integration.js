@@ -7,8 +7,8 @@
     // Create overlay canvas
     const overlay = document.createElement('canvas');
     overlay.id = 'polish-overlay';
-    overlay.width = 320;
-    overlay.height = 240;
+    overlay.width = CONFIG.CANVAS_W;
+    overlay.height = CONFIG.CANVAS_H;
     overlay.style.cssText = `
         position: absolute;
         top: 0; left: 0;
@@ -34,22 +34,22 @@
         
         if (typeof Engine !== 'undefined' && Engine.isCanvasMode && Engine.isCanvasMode()) {
             const ctx = overlay.getContext('2d');
-            ctx.clearRect(0, 0, 320, 240);
-            
+            ctx.clearRect(0, 0, CONFIG.CANVAS_W, CONFIG.CANVAS_H);
+
             let camX = 0, camY = 0;
             if (typeof Camera !== 'undefined' && Camera.getOffset) {
                 const c = Camera.getOffset();
                 camX = c.x; camY = c.y;
             }
-            
+
             // Update
             if (typeof UIPolish !== 'undefined') UIPolish.update(dt);
             if (typeof Cutscene !== 'undefined') Cutscene.update(dt);
-            
+
             // Render
-            if (typeof Minimap !== 'undefined') Minimap.render(ctx, 320, 240);
-            if (typeof UIPolish !== 'undefined') UIPolish.render(ctx, 320, 240, camX, camY);
-            if (typeof Cutscene !== 'undefined') Cutscene.render(ctx, 320, 240);
+            if (typeof Minimap !== 'undefined') Minimap.render(ctx, CONFIG.CANVAS_W, CONFIG.CANVAS_H);
+            if (typeof UIPolish !== 'undefined') UIPolish.render(ctx, CONFIG.CANVAS_W, CONFIG.CANVAS_H, camX, camY);
+            if (typeof Cutscene !== 'undefined') Cutscene.render(ctx, CONFIG.CANVAS_W, CONFIG.CANVAS_H);
         }
         
         requestAnimationFrame(loop);

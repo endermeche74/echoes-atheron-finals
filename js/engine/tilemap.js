@@ -4,7 +4,7 @@
  *************************************************************/
 
 const Tilemap = (function() {
-    const TILE = 16;
+    const TILE = CONFIG.TILE;
     
     // === TILE TYPES ===
     const TILES = {
@@ -210,7 +210,7 @@ const Tilemap = (function() {
                 ctx.fillRect(px, py + 5, TILE, 1);
                 ctx.fillRect(px, py + 11, TILE, 1);
                 ctx.fillRect(px + ((ty % 2) * 8), py, 1, 6);
-                ctx.fillRect(px + ((ty % 2) * 8 + 8) % 16, py + 6, 1, 5);
+                ctx.fillRect(px + ((ty % 2) * (TILE/2) + TILE/2) % TILE, py + 6, 1, 5);
                 break;
                 
             case TILES.WALL_TOP:

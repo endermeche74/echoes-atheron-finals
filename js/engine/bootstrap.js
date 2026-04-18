@@ -45,23 +45,25 @@
             
             // Collision check
             if (typeof Tilemap !== 'undefined' && Tilemap.isSolid) {
-                const tileX = Math.floor((newX + 8) / 16);
-                const tileY = Math.floor((newY + 8) / 16);
-                const tileX2 = Math.floor((newX + 14) / 16);
-                const tileY2 = Math.floor((newY + 14) / 16);
-                
+                const T  = CONFIG.TILE;
+                const hb = CONFIG.PLAYER_HITBOX;
+                const tileX  = Math.floor((newX + hb.x) / T);
+                const tileY  = Math.floor((newY + hb.y) / T);
+                const tileX2 = Math.floor((newX + hb.x + hb.w) / T);
+                const tileY2 = Math.floor((newY + hb.y + hb.h) / T);
+
                 // Check corners
                 if (move.x !== 0) {
                     const checkX = move.x > 0 ? tileX2 : tileX;
-                    if (Tilemap.isSolid(checkX, Math.floor((Player.getY() + 4) / 16)) ||
-                        Tilemap.isSolid(checkX, Math.floor((Player.getY() + 14) / 16))) {
+                    if (Tilemap.isSolid(checkX, Math.floor((Player.getY() + hb.y) / T)) ||
+                        Tilemap.isSolid(checkX, Math.floor((Player.getY() + hb.y + hb.h) / T))) {
                         newX = Player.getX();
                     }
                 }
                 if (move.y !== 0) {
                     const checkY = move.y > 0 ? tileY2 : tileY;
-                    if (Tilemap.isSolid(Math.floor((Player.getX() + 4) / 16), checkY) ||
-                        Tilemap.isSolid(Math.floor((Player.getX() + 12) / 16), checkY)) {
+                    if (Tilemap.isSolid(Math.floor((Player.getX() + hb.x) / T), checkY) ||
+                        Tilemap.isSolid(Math.floor((Player.getX() + hb.x + hb.w) / T), checkY)) {
                         newY = Player.getY();
                     }
                 }
@@ -72,14 +74,14 @@
             
             // Check transitions
             if (typeof Tilemap !== 'undefined' && Tilemap.getTransitionAt) {
-                const tx = Math.floor((newX + 8) / 16);
-                const ty = Math.floor((newY + 8) / 16);
+                const tx = Math.floor((newX + CONFIG.TILE/2) / CONFIG.TILE);
+                const ty = Math.floor((newY + CONFIG.TILE/2) / CONFIG.TILE);
                 const transition = Tilemap.getTransitionAt(tx, ty);
                 if (transition) {
                     if (typeof Effects !== 'undefined') {
                         Effects.fadeToBlack(0.3, () => {
                             Tilemap.loadArea(transition.target);
-                            Player.setPosition(transition.spawnX * 16, transition.spawnY * 16);
+                            Player.setPosition(transition.spawnX * CONFIG.TILE, transition.spawnY * CONFIG.TILE);
                             if (typeof Camera !== 'undefined' && Camera.snapToPlayer) {
                                 Camera.snapToPlayer();
                             }
@@ -87,7 +89,7 @@
                         });
                     } else {
                         Tilemap.loadArea(transition.target);
-                        Player.setPosition(transition.spawnX * 16, transition.spawnY * 16);
+                        Player.setPosition(transition.spawnX * CONFIG.TILE, transition.spawnY * CONFIG.TILE);
                     }
                 }
             }
@@ -116,8 +118,8 @@
         }
         
         if (!Player.getTileX) {
-            Player.getTileX = function() { return Math.floor((Player.getX() + 8) / 16); };
-            Player.getTileY = function() { return Math.floor((Player.getY() + 8) / 16); };
+            Player.getTileX = function() { return Math.floor((Player.getX() + CONFIG.TILE/2) / CONFIG.TILE); };
+            Player.getTileY = function() { return Math.floor((Player.getY() + CONFIG.TILE/2) / CONFIG.TILE); };
         }
         
         console.log('[Bootstrap] Player movement patched');

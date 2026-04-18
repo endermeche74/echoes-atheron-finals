@@ -211,7 +211,7 @@ const Lighting = (function() {
             const map = Maps.get(areaId);
             if (map && map.lights) {
                 for (const light of map.lights) {
-                    addLight(light.x * 16 + 8, light.y * 16 + 8, light.type || 'TORCH');
+                    addLight(light.x * CONFIG.TILE + CONFIG.TILE/2, light.y * CONFIG.TILE + CONFIG.TILE/2, light.type || 'TORCH');
                 }
             }
         }
@@ -291,8 +291,8 @@ const Lighting = (function() {
         
         for (let i = 0; i < count; i++) {
             raindrops.push({
-                x: Math.random() * 320,
-                y: Math.random() * 240,
+                x: Math.random() * CONFIG.CANVAS_W,
+                y: Math.random() * CONFIG.CANVAS_H,
                 speed: 200 + Math.random() * 100,
                 length: 4 + Math.random() * 4
             });
@@ -318,11 +318,11 @@ const Lighting = (function() {
                 drop.y += drop.speed * dt;
                 drop.x += 30 * dt; // Wind
                 
-                if (drop.y > 240) {
+                if (drop.y > CONFIG.CANVAS_H) {
                     drop.y = -10;
-                    drop.x = Math.random() * 320;
+                    drop.x = Math.random() * CONFIG.CANVAS_W;
                 }
-                if (drop.x > 320) {
+                if (drop.x > CONFIG.CANVAS_W) {
                     drop.x = -10;
                 }
             }

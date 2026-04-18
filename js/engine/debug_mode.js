@@ -66,8 +66,8 @@ const DebugMode = (function () {
 
         overlay = document.createElement('canvas');
         overlay.id = 'debug-overlay';
-        overlay.width  = 320;
-        overlay.height = 240;
+        overlay.width  = CONFIG.CANVAS_W;
+        overlay.height = CONFIG.CANVAS_H;
         overlay.style.cssText = `
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
@@ -128,7 +128,7 @@ const DebugMode = (function () {
 
         blinkT += dt;
 
-        octx.clearRect(0, 0, 320, 240);
+        octx.clearRect(0, 0, CONFIG.CANVAS_W, CONFIG.CANVAS_H);
 
         if (enabled && typeof Engine !== 'undefined' && Engine.isCanvasMode()) {
             drawWorldOverlays();
@@ -149,16 +149,17 @@ const DebugMode = (function () {
         if (typeof Tilemap !== 'undefined') {
             const W  = (typeof Engine !== 'undefined') ? Engine.CANVAS_TILES_X + 2 : 22;
             const H  = (typeof Engine !== 'undefined') ? Engine.CANVAS_TILES_Y + 2 : 17;
-            const TX = Math.floor(cam.x / 16);
-            const TY = Math.floor(cam.y / 16);
+            const T  = CONFIG.TILE;
+            const TX = Math.floor(cam.x / T);
+            const TY = Math.floor(cam.y / T);
 
             for (let ty = TY; ty < TY + H; ty++) {
                 for (let tx = TX; tx < TX + W; tx++) {
-                    const px = tx * 16, py = ty * 16;
+                    const px = tx * T, py = ty * T;
 
                     if (showColl && Tilemap.isSolid(tx, ty)) {
                         octx.fillStyle = 'rgba(220,40,40,0.28)';
-                        octx.fillRect(px, py, 16, 16);
+                        octx.fillRect(px, py, T, T);
                     }
 
                     if (showTrans && typeof Tilemap.getTransitionAt === 'function') {
@@ -166,14 +167,14 @@ const DebugMode = (function () {
                         if (tr) {
                             const a = 0.35 + Math.sin(blinkT * 6) * 0.25;
                             octx.fillStyle = `rgba(220,200,40,${a})`;
-                            octx.fillRect(px, py, 16, 16);
+                            octx.fillRect(px, py, T, T);
                         }
                     }
 
                     if (showGrid) {
                         octx.strokeStyle = 'rgba(100,90,160,0.30)';
                         octx.lineWidth = 0.5;
-                        octx.strokeRect(px, py, 16, 16);
+                        octx.strokeRect(px, py, T, T);
                         // Tile number
                         if (typeof Tilemap.getTile === 'function') {
                             const tid = Tilemap.getTile(tx, ty);
@@ -188,11 +189,11 @@ const DebugMode = (function () {
             // Entity labels & hitboxes
             if ((showEntInfo || showHitbox) && typeof Tilemap.getEntities === 'function') {
                 for (const e of Tilemap.getEntities()) {
-                    const ex = e.x * 16, ey = e.y * 16;
+                    const ex = e.x * T, ey = e.y * T;
                     if (showHitbox) {
                         octx.strokeStyle = '#44ff88';
                         octx.lineWidth = 1;
-                        octx.strokeRect(ex, ey, 16, 16);
+                        octx.strokeRect(ex, ey, T, T);
                     }
                     if (showEntInfo) {
                         octx.fillStyle = 'rgba(8,6,18,0.75)';
@@ -210,9 +211,10 @@ const DebugMode = (function () {
             const px = Player.getX(), py = Player.getY();
             octx.strokeStyle = '#ffff44';
             octx.lineWidth = 1;
-            octx.strokeRect(px + 2, py + 2, 12, 12);      // collision box (COLLISION_PADDING=2)
+            const hb = CONFIG.PLAYER_HITBOX;
+            octx.strokeRect(px + hb.x, py + hb.y, hb.w, hb.h);   // collision box
             octx.strokeStyle = 'rgba(255,255,60,0.35)';
-            octx.strokeRect(px, py, 16, 16);               // full tile
+            octx.strokeRect(px, py, CONFIG.TILE, CONFIG.TILE);     // full tile
         }
 
         octx.restore();
@@ -222,7 +224,6 @@ const DebugMode = (function () {
     //  SCREEN-SPACE HUD
     // ─────────────────────────────────────────────────
     function drawHUD() {
-        const TILE = 16;
         let px = 0, py = 0, tx = 0, ty = 0;
         if (typeof Player !== 'undefined') {
             px = Math.round(Player.getX());
@@ -366,16 +367,16 @@ const DebugMode = (function () {
 
         const rect = container.getBoundingClientRect();
         // Screen position → internal canvas coords (320×240 space)
-        const sx = (e.clientX - rect.left) / rect.width  * 320;
-        const sy = (e.clientY - rect.top)  / rect.height * 240;
+        const sx = (e.clientX - rect.left) / rect.width  * CONFIG.CANVAS_W;
+        const sy = (e.clientY - rect.top)  / rect.height * CONFIG.CANVAS_H;
 
         // Apply camera offset → world coords
         const cam = (typeof Camera !== 'undefined') ? Camera.getOffset() : { x: 0, y: 0 };
         const wx  = sx + cam.x;
         const wy  = sy + cam.y;
 
-        const ttx = Math.floor(wx / 16);
-        const tty = Math.floor(wy / 16);
+        const ttx = Math.floor(wx / CONFIG.TILE);
+        const tty = Math.floor(wy / CONFIG.TILE);
 
         if (typeof Player !== 'undefined') {
             Player.setPosition(ttx, tty);
@@ -441,11 +442,11 @@ const DebugMode = (function () {
 
         // Clamp to map bounds (rough estimate)
         const mw = (typeof Tilemap !== 'undefined' && Tilemap.getWidth)
-            ? Tilemap.getWidth() * 16 : 9999;
+            ? Tilemap.getWidth()  * CONFIG.TILE : 9999;
         const mh = (typeof Tilemap !== 'undefined' && Tilemap.getHeight)
-            ? Tilemap.getHeight() * 16 : 9999;
-        cx = Math.max(0, Math.min(cx, mw - 320));
-        cy = Math.max(0, Math.min(cy, mh - 240));
+            ? Tilemap.getHeight() * CONFIG.TILE : 9999;
+        cx = Math.max(0, Math.min(cx, mw - CONFIG.CANVAS_W));
+        cy = Math.max(0, Math.min(cy, mh - CONFIG.CANVAS_H));
 
         Camera.setOffset(cx, cy);
     }

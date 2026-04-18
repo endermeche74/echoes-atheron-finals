@@ -5,7 +5,7 @@
  *************************************************************/
 
 const Camera = (function() {
-    const TILE = 16;
+    const TILE = CONFIG.TILE;
     
     // === STATE ===
     let x = 0;  // top-left corner of viewport in world coords

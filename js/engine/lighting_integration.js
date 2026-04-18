@@ -40,43 +40,40 @@
         if (!map) return;
         
         // Check for explicit lights array
+        const T = CONFIG.TILE, TH = CONFIG.TILE / 2;
         if (map.lights) {
             for (const light of map.lights) {
                 Lighting.addLight(
-                    light.x * 16 + 8,
-                    light.y * 16 + 8,
+                    light.x * T + TH,
+                    light.y * T + TH,
                     light.type || 'TORCH'
                 );
             }
         }
-        
+
         // Auto-detect lights from tiles (fire, torch tiles)
-        // Blood tiles (30) often indicate fire pits in our maps
         if (map.tiles) {
-            const width = map.width || 20;
-            
+            const width = map.width || CONFIG.GRID_W;
+
             for (let i = 0; i < map.tiles.length; i++) {
                 const tile = map.tiles[i];
-                const x = (i % width) * 16 + 8;
-                const y = Math.floor(i / width) * 16 + 8;
-                
-                // Blood tile = fire/char (add fire light)
+                const x = (i % width) * T + TH;
+                const y = Math.floor(i / width) * T + TH;
+
                 if (tile === 30 && shouldHaveFireLight(areaId, i, width)) {
                     Lighting.addLight(x, y, 'FIRE');
                 }
             }
         }
-        
+
         // Add lights near certain NPCs
         if (map.entities) {
             for (const entity of map.entities) {
-                // Smithy NPCs have forge light
                 if (entity.id && entity.id.includes('smith')) {
-                    Lighting.addLight(entity.x * 16, entity.y * 16, 'FIRE');
+                    Lighting.addLight(entity.x * T, entity.y * T, 'FIRE');
                 }
-                // Magic users have magic glow
                 if (entity.id && (entity.id.includes('mage') || entity.id.includes('scholar'))) {
-                    Lighting.addLight(entity.x * 16 + 8, entity.y * 16 + 8, 'MAGIC');
+                    Lighting.addLight(entity.x * T + TH, entity.y * T + TH, 'MAGIC');
                 }
             }
         }
@@ -151,8 +148,8 @@
     // Try to hook into Engine's render via overlay
     const lightingCanvas = document.createElement('canvas');
     lightingCanvas.id = 'lighting-overlay';
-    lightingCanvas.width = 320;
-    lightingCanvas.height = 240;
+    lightingCanvas.width = CONFIG.CANVAS_W;
+    lightingCanvas.height = CONFIG.CANVAS_H;
     lightingCanvas.style.cssText = `
         position: absolute;
         top: 0;
@@ -196,8 +193,8 @@
             
             // Render lighting
             const ctx = lightingCanvas.getContext('2d');
-            ctx.clearRect(0, 0, 320, 240);
-            Lighting.render(ctx, 320, 240, camX, camY);
+            ctx.clearRect(0, 0, CONFIG.CANVAS_W, CONFIG.CANVAS_H);
+            Lighting.render(ctx, CONFIG.CANVAS_W, CONFIG.CANVAS_H, camX, camY);
         }
         
         requestAnimationFrame(lightingLoop);

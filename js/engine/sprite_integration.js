@@ -201,8 +201,8 @@
             const entities = Tilemap.getEntities();
             
             for (const entity of entities) {
-                const px = entity.x * 16;
-                const py = entity.y * 16;
+                const px = entity.x * CONFIG.TILE;
+                const py = entity.y * CONFIG.TILE;
                 
                 // Get animation controller
                 const anim = getEntityAnim(entity);

@@ -61,8 +61,8 @@
     // === RENDER HOOK ===
     const combatCanvas = document.createElement('canvas');
     combatCanvas.id = 'combat-canvas';
-    combatCanvas.width = 320;
-    combatCanvas.height = 240;
+    combatCanvas.width = CONFIG.CANVAS_W;
+    combatCanvas.height = CONFIG.CANVAS_H;
     combatCanvas.style.cssText = `
         position: absolute;
         top: 0;
@@ -93,7 +93,7 @@
             combatCanvas.style.display = 'block';
             CombatCanvas.update(dt);
             const ctx = combatCanvas.getContext('2d');
-            ctx.clearRect(0, 0, 320, 240);
+            ctx.clearRect(0, 0, CONFIG.CANVAS_W, CONFIG.CANVAS_H);
             CombatCanvas.render(ctx);
         } else {
             combatCanvas.style.display = 'none';

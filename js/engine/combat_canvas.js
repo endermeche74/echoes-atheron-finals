@@ -376,7 +376,7 @@ const CombatCanvas = (function() {
     function render(ctx) {
         if (!active) return;
         
-        const W = 320, H = 240;
+        const W = CONFIG.CANVAS_W, H = CONFIG.CANVAS_H;
         
         // Background
         ctx.fillStyle = '#1a1a1a';

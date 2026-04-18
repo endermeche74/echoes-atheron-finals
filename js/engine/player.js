@@ -4,9 +4,8 @@
  *************************************************************/
 
 const Player = (function() {
-    const TILE = 16;
-    const MOVE_SPEED = 80;  // pixels per second
-    const COLLISION_PADDING = 2;  // pixels inset from tile edges
+    const TILE       = CONFIG.TILE;
+    const MOVE_SPEED = CONFIG.PLAYER_SPEED;
     
     // === STATE ===
     let x = 0;       // pixel position
@@ -121,25 +120,20 @@ const Player = (function() {
     
     function canMoveTo(newX, newY) {
         if (typeof Tilemap === 'undefined') return true;
-        
-        // Check all four corners of the collision box
-        const pad = COLLISION_PADDING;
+
+        const hb = CONFIG.PLAYER_HITBOX;
         const corners = [
-            { x: newX + pad,          y: newY + pad },           // top-left
-            { x: newX + TILE - pad,   y: newY + pad },           // top-right
-            { x: newX + pad,          y: newY + TILE - pad },    // bottom-left
-            { x: newX + TILE - pad,   y: newY + TILE - pad }     // bottom-right
+            { x: newX + hb.x,          y: newY + hb.y          },  // top-left
+            { x: newX + hb.x + hb.w,   y: newY + hb.y          },  // top-right
+            { x: newX + hb.x,          y: newY + hb.y + hb.h   },  // bottom-left
+            { x: newX + hb.x + hb.w,   y: newY + hb.y + hb.h   },  // bottom-right
         ];
-        
-        for (const corner of corners) {
-            const checkTx = Math.floor(corner.x / TILE);
-            const checkTy = Math.floor(corner.y / TILE);
-            
-            if (Tilemap.isSolid(checkTx, checkTy)) {
-                return false;
-            }
+
+        for (const c of corners) {
+            const tx = Math.floor(c.x / CONFIG.TILE);
+            const ty = Math.floor(c.y / CONFIG.TILE);
+            if (Tilemap.isSolid(tx, ty)) return false;
         }
-        
         return true;
     }
     
@@ -196,12 +190,12 @@ const Player = (function() {
     // Return an enemy entity that would be walked into at (newX, newY)
     function getBumpedEnemy(newX, newY) {
         if (typeof Tilemap === 'undefined') return null;
-        const pad = COLLISION_PADDING;
+        const hb = CONFIG.PLAYER_HITBOX;
         const corners = [
-            { x: newX + pad,        y: newY + pad },
-            { x: newX + TILE - pad, y: newY + pad },
-            { x: newX + pad,        y: newY + TILE - pad },
-            { x: newX + TILE - pad, y: newY + TILE - pad }
+            { x: newX + hb.x,        y: newY + hb.y         },
+            { x: newX + hb.x + hb.w, y: newY + hb.y         },
+            { x: newX + hb.x,        y: newY + hb.y + hb.h  },
+            { x: newX + hb.x + hb.w, y: newY + hb.y + hb.h  },
         ];
         for (const c of corners) {
             const etx = Math.floor(c.x / TILE);

@@ -42,13 +42,6 @@ const Tilemap = (function() {
         RUBBLE:    33
     };
     
-    // Which tiles block movement
-    const SOLID_TILES = new Set([
-        TILES.VOID, TILES.WALL, TILES.WALL_TOP, TILES.WATER,
-        TILES.DOOR_CLOSED, TILES.PILLAR, TILES.CRATE, 
-        TILES.TABLE, TILES.BED
-    ]);
-    
     // === STATE ===
     let currentMap = null;
     let currentAreaId = null;
@@ -134,13 +127,11 @@ const Tilemap = (function() {
     function isSolid(x, y) {
         const tile = getTile(x, y);
 
-        if (SOLID_TILES.has(tile)) return true;
+        if (CONFIG.SOLID_TILES.includes(tile)) return true;
 
         const entity = getEntityAt(x, y);
         if (!entity) return false;
-        // Enemies block movement (combat is triggered on bump)
         if (entity.type === 'enemy') return true;
-        // Other entities only block if explicitly marked solid
         return entity.solid === true;
     }
     

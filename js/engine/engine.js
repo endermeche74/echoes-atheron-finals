@@ -5,13 +5,13 @@
  *************************************************************/
 
 const Engine = (function() {
-    // === CONFIGURATION ===
-    const TILE_SIZE = 16;
-    const CANVAS_TILES_X = 20;  // 320px wide
-    const CANVAS_TILES_Y = 15;  // 240px tall
-    const CANVAS_WIDTH = CANVAS_TILES_X * TILE_SIZE;
-    const CANVAS_HEIGHT = CANVAS_TILES_Y * TILE_SIZE;
-    const SCALE = 3;  // display scale (canvas is CSS-stretched to fullscreen)
+    // === CONFIGURATION (sourced from CONFIG) ===
+    const TILE_SIZE      = CONFIG.TILE;
+    const CANVAS_TILES_X = CONFIG.GRID_W;
+    const CANVAS_TILES_Y = CONFIG.GRID_H;
+    const CANVAS_WIDTH   = CONFIG.CANVAS_W;
+    const CANVAS_HEIGHT  = CONFIG.CANVAS_H;
+    const SCALE          = CONFIG.SCALE;
     const TARGET_FPS = 60;
     const FRAME_TIME = 1000 / TARGET_FPS;
 

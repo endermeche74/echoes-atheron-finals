@@ -85,6 +85,9 @@ const Camera = (function() {
         getOffset: () => ({ x: Math.floor(x), y: Math.floor(y) }),
         getX: () => x,
         getY: () => y,
+
+        // Force camera position (used by debug free-cam)
+        setOffset: (nx, ny) => { x = nx; y = ny; targetX = nx; targetY = ny; },
         
         // Convert screen coords to world coords
         screenToWorld: (sx, sy) => ({

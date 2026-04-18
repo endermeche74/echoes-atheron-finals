@@ -25,16 +25,16 @@ const Minimap = (function() {
         
         // Get current area - try multiple methods
         let map = null;
-        let mapW = 20, mapH = 15;
-        
+        let mapW = CONFIG.GRID_W, mapH = CONFIG.GRID_H;
+
         if (Tilemap.getCurrentArea && typeof Maps !== 'undefined') {
             const areaId = Tilemap.getCurrentArea();
             if (areaId) map = Maps.get(areaId);
         }
-        
+
         if (map) {
-            mapW = map.width || 20;
-            mapH = map.height || 15;
+            mapW = map.width || CONFIG.GRID_W;
+            mapH = map.height || CONFIG.GRID_H;
         }
         
         const px = Player.getTileX();

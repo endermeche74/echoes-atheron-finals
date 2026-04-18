@@ -17,8 +17,8 @@ const Camera = (function() {
     const DEADZONE = 32;  // Pixels from center before camera moves
     
     // Map bounds (set when area loads)
-    let mapWidth = 20 * TILE;
-    let mapHeight = 15 * TILE;
+    let mapWidth = CONFIG.GRID_W * TILE;
+    let mapHeight = CONFIG.GRID_H * TILE;
     
     // === UPDATE ===
     function update(dt) {

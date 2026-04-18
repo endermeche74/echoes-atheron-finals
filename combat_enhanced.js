@@ -1,646 +1,664 @@
 /*************************************************************
- * combat_enhanced.js — Enhanced Combat Renderer
- * Replaces CombatCanvas.render with detailed pixel art visuals
- * Load AFTER: combat_canvas.js, combat_canvas_integration.js
+ * combat_enhanced.js — Enhanced Combat with Skills & Inventory
+ * Replaces combat_canvas.js
  *************************************************************/
 
-(function () {
-    'use strict';
-
-    if (typeof CombatCanvas === 'undefined') {
-        console.warn('[CombatEnhanced] CombatCanvas not found');
-        return;
+const CombatEnhanced = (function() {
+    
+    // === STATE ===
+    let active = false;
+    let phase = 'select'; // select, target, skill_select, item_select, animate, enemy_turn
+    let turn = 'player';
+    
+    let menuIndex = 0;
+    let subMenuIndex = 0;
+    let limbIndex = 2; // Start on torso
+    
+    let player = null;
+    let enemy = null;
+    let selectedAction = null;
+    let selectedSkill = null;
+    let selectedItem = null;
+    
+    let message = '';
+    let messageTimer = 0;
+    
+    // === PLAYER STATS ===
+    function initPlayer() {
+        return {
+            name: 'Wanderer',
+            hp: 100, maxHp: 100,
+            mp: 50, maxMp: 50,
+            atk: 15, def: 5, mag: 10,
+            skills: [
+                { id: 'slash', name: 'Slash', mp: 0, type: 'physical', power: 1.0, desc: 'Basic attack' },
+                { id: 'heavy', name: 'Heavy Strike', mp: 8, type: 'physical', power: 1.8, desc: 'Powerful blow' },
+                { id: 'thrust', name: 'Thrust', mp: 5, type: 'physical', power: 1.2, acc: 1.2, desc: 'Precise stab' },
+                { id: 'fireball', name: 'Fireball', mp: 12, type: 'magic', power: 1.5, desc: 'Fire damage' },
+                { id: 'heal', name: 'Heal', mp: 15, type: 'heal', power: 30, desc: 'Restore HP' },
+                { id: 'drain', name: 'Life Drain', mp: 10, type: 'drain', power: 0.8, desc: 'Steal HP' }
+            ],
+            inventory: [
+                { id: 'potion', name: 'Health Potion', count: 3, effect: 'heal', value: 30 },
+                { id: 'ether', name: 'Mana Elixir', count: 2, effect: 'mp', value: 25 },
+                { id: 'antidote', name: 'Antidote', count: 1, effect: 'cure', value: 'poison' },
+                { id: 'bomb', name: 'Fire Bomb', count: 2, effect: 'damage', value: 40 }
+            ],
+            limbs: {
+                HEAD: { hp: 30, maxHp: 30 },
+                TORSO: { hp: 50, maxHp: 50 },
+                L_ARM: { hp: 25, maxHp: 25 },
+                R_ARM: { hp: 25, maxHp: 25 },
+                LEGS: { hp: 30, maxHp: 30 }
+            },
+            defending: false
+        };
     }
-
-    // ─────────────────────────────────────────────────
-    //  LAYOUT  (320 × 240 internal canvas)
-    // ─────────────────────────────────────────────────
-    const W = 320, H = 240;
-    const ARENA_BOT = 160;
-    const UI_Y      = ARENA_BOT;
-
-    const PLAYER_X = 70,  PLAYER_Y = 118;   // player back-view centre
-    const ENEMY_X  = 218, ENEMY_Y  = 92;    // enemy figure centre
-
-    // ─────────────────────────────────────────────────
-    //  PALETTE
-    // ─────────────────────────────────────────────────
-    const C = {
-        bg:          '#0d0b12',
-        floor:       '#1c1a26',
-        uiBg:        'rgba(10,9,18,0.92)',
-        uiBorder:    '#36334e',
-        uiActive:    '#4e4a6a',
-        text:        '#bab6cc',
-        textDim:     '#686476',
-        textBright:  '#eae6f8',
-        textGold:    '#d6bc48',
-        textRed:     '#cc4444',
-        hpGreen:     '#3ea84a',
-        hpYellow:    '#c8a030',
-        hpRed:       '#b83030',
-        hpEnemy:     '#a03030',
-        hpBg:        '#18182a',
-        hpBorder:    '#383656',
-        shadow:      'rgba(0,0,0,0.55)',
+    
+    // === ACTIONS ===
+    const ACTIONS = [
+        { id: 'attack', name: 'Attack', icon: '⚔' },
+        { id: 'skills', name: 'Skills', icon: '✦' },
+        { id: 'items', name: 'Items', icon: '◆' },
+        { id: 'defend', name: 'Defend', icon: '🛡' },
+        { id: 'flee', name: 'Flee', icon: '↩' }
+    ];
+    
+    // === LIMBS ===
+    const LIMBS = {
+        HEAD: { name: 'Head', dmg: 1.5, hit: 0.6, crit: 0.3, pos: { x: 0, y: -24 } },
+        TORSO: { name: 'Torso', dmg: 1.0, hit: 0.9, crit: 0.1, pos: { x: 0, y: -8 } },
+        L_ARM: { name: 'L.Arm', dmg: 0.8, hit: 0.75, crit: 0.05, pos: { x: -18, y: -8 } },
+        R_ARM: { name: 'R.Arm', dmg: 0.8, hit: 0.75, crit: 0.05, pos: { x: 18, y: -8 } },
+        LEGS: { name: 'Legs', dmg: 0.7, hit: 0.8, crit: 0.05, pos: { x: 0, y: 10 } }
     };
-
-    // ─────────────────────────────────────────────────
-    //  LOCAL STATE
-    // ─────────────────────────────────────────────────
-    let _pulse     = 0;
-    let _prevMsg   = '';
-    let _log       = [];   // { text, color }
-    let _flashT    = 0;
-    let _flashClr  = 'rgba(180,40,40,0.22)';
-
-    // Intercept start to reset log
-    const _origStart = CombatCanvas.start;
-    CombatCanvas.start = function (enemyData) {
-        _origStart.call(this, enemyData);
-        _log = [];
-        _flashT = 0;
-        _pulse = 0;
-        _prevMsg = '';
-        pushLog('Combat begins!', C.textGold);
-    };
-
-    function pushLog(msg, color) {
-        _log.push({ text: msg, color: color || C.text });
-        if (_log.length > 5) _log.shift();
+    const LIMB_ORDER = ['HEAD', 'L_ARM', 'TORSO', 'R_ARM', 'LEGS'];
+    
+    // === START COMBAT ===
+    function start(enemyData) {
+        active = true;
+        phase = 'select';
+        turn = 'player';
+        menuIndex = 0;
+        subMenuIndex = 0;
+        limbIndex = 2;
+        
+        player = initPlayer();
+        
+        enemy = {
+            name: enemyData.name || 'Enemy',
+            hp: enemyData.hp || 50,
+            maxHp: enemyData.maxHp || enemyData.hp || 50,
+            atk: enemyData.atk || 10,
+            def: enemyData.def || 3,
+            sprite: enemyData.sprite || 'bandit',
+            boss: enemyData.boss || false,
+            limbs: {
+                HEAD: { hp: 15, maxHp: 15 },
+                TORSO: { hp: 25, maxHp: 25 },
+                L_ARM: { hp: 12, maxHp: 12 },
+                R_ARM: { hp: 12, maxHp: 12 },
+                LEGS: { hp: 15, maxHp: 15 }
+            }
+        };
+        
+        showMessage(enemy.name + ' appears!');
+        
+        if (typeof Input !== 'undefined') Input.disable();
+        
+        console.log('[Combat] Started vs', enemy.name);
     }
-
-    // ─────────────────────────────────────────────────
-    //  PATCH render
-    // ─────────────────────────────────────────────────
-    CombatCanvas.render = function (ctx) {
-        if (!CombatCanvas.isActive()) return;
-        const S = CombatCanvas.getState();
-        if (!S || !S.player || !S.enemy) return;
-
-        // Advance timers (≈ 60 fps)
-        const dt = 1 / 60;
-        _pulse = (_pulse + dt * 4) % (Math.PI * 2);
-        if (_flashT > 0) _flashT -= dt;
-
-        // Collect new messages
-        if (S.message && S.messageTimer > 1.6 && S.message !== _prevMsg) {
-            _prevMsg = S.message;
-            const col = /destroy|death|MISS|dead/i.test(S.message) ? C.textRed
-                      : /hit|attack|damage/i.test(S.message)       ? C.text
-                      : C.textGold;
-            pushLog(S.message, col);
-        }
-
-        drawBG(ctx, S);
-        drawCombatants(ctx, S);
-        drawLimbOverlay(ctx, S);
-        if (_flashT > 0) { ctx.fillStyle = _flashClr; ctx.fillRect(0, 0, W, H); }
-        drawUI(ctx, S);
-    };
-
-    // ─────────────────────────────────────────────────
-    //  BACKGROUND
-    // ─────────────────────────────────────────────────
-    function drawBG(ctx, S) {
-        ctx.fillStyle = C.bg;
-        ctx.fillRect(0, 0, W, ARENA_BOT);
-
-        // Atmospheric glow behind enemy
-        const grd = ctx.createRadialGradient(ENEMY_X, ENEMY_Y, 8, ENEMY_X, ENEMY_Y, 80);
-        grd.addColorStop(0, 'rgba(80,30,80,0.16)');
-        grd.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = grd;
-        ctx.fillRect(0, 0, W, ARENA_BOT);
-
-        // Stone floor strip
-        ctx.fillStyle = C.floor;
-        ctx.fillRect(0, 136, W, ARENA_BOT - 136);
-        ctx.strokeStyle = 'rgba(25,22,38,0.8)';
-        ctx.lineWidth = 1;
-        for (let fx = 48; fx < W; fx += 48) {
-            ctx.beginPath(); ctx.moveTo(fx, 136); ctx.lineTo(fx, ARENA_BOT); ctx.stroke();
-        }
-        ctx.beginPath(); ctx.moveTo(0, 145); ctx.lineTo(W, 145); ctx.stroke();
-        ctx.lineWidth = 1;
-
-        // UI strip
-        ctx.fillStyle = C.uiBg;
-        ctx.fillRect(0, UI_Y, W, H - UI_Y);
-        ctx.strokeStyle = C.uiBorder;
-        ctx.strokeRect(0, UI_Y, W, H - UI_Y);
-
-        // Thin divider line above UI
-        ctx.strokeStyle = 'rgba(80,70,120,0.5)';
-        ctx.beginPath(); ctx.moveTo(0, UI_Y); ctx.lineTo(W, UI_Y); ctx.stroke();
-    }
-
-    // ─────────────────────────────────────────────────
-    //  COMBATANTS
-    // ─────────────────────────────────────────────────
-    function drawCombatants(ctx, S) {
-        drawPlayerBack(ctx, PLAYER_X, PLAYER_Y, S.player);
-        const sp = (S.enemy.sprite || '').toLowerCase();
-        if (sp.includes('wolf'))                         drawWolf(ctx, ENEMY_X, ENEMY_Y, S.enemy);
-        else if (sp.includes('spirit') || sp.includes('shade') || sp.includes('cinder_sp')) drawSpirit(ctx, ENEMY_X, ENEMY_Y, S.enemy);
-        else if (sp.includes('undead'))                  drawUndead(ctx, ENEMY_X, ENEMY_Y, S.enemy);
-        else if (sp.includes('boss') || S.enemy.boss)   drawBoss(ctx, ENEMY_X, ENEMY_Y, S.enemy);
-        else                                             drawHumanoid(ctx, ENEMY_X, ENEMY_Y, S.enemy);
-    }
-
-    function drawPlayerBack(ctx, cx, cy, pl) {
-        // Shadow
-        ctx.fillStyle = C.shadow;
-        ctx.beginPath(); ctx.ellipse(cx, cy + 22, 14, 4, 0, 0, Math.PI * 2); ctx.fill();
-
-        // Cloak body
-        ctx.fillStyle = '#3d2e1a';
-        ctx.fillRect(cx - 13, cy - 14, 26, 32);
-        // Cloak bottom
-        ctx.fillStyle = '#2d2010';
-        ctx.fillRect(cx - 11, cy + 16, 22, 8);
-        // Leg gap
-        ctx.fillStyle = '#1a1008';
-        ctx.fillRect(cx - 1, cy + 18, 2, 8);
-        // Shoulder highlights
-        ctx.fillStyle = '#5a4830';
-        ctx.fillRect(cx - 12, cy - 12, 3, 20);
-        ctx.fillRect(cx + 9,  cy - 12, 3, 20);
-        // Hood
-        ctx.fillStyle = '#2d2010';
-        ctx.fillRect(cx - 9, cy - 26, 18, 14);
-        ctx.fillStyle = '#1a1008';
-        ctx.fillRect(cx - 7, cy - 24, 14, 12);
-
-        // Low HP red tint
-        if (pl.hp / pl.maxHp < 0.3) {
-            ctx.fillStyle = 'rgba(180,30,30,0.28)';
-            ctx.fillRect(cx - 16, cy - 30, 32, 58);
+    
+    function end(victory) {
+        active = false;
+        if (typeof Input !== 'undefined') Input.enable();
+        
+        if (victory) {
+            const xp = enemy.maxHp;
+            const gold = Math.floor(enemy.maxHp / 2);
+            showMessage('Victory! +' + xp + ' XP, +' + gold + ' Gold');
         }
     }
-
-    function nameTag(ctx, cx, y, name, gold) {
-        ctx.font = gold ? 'bold 9px monospace' : '8px monospace';
-        const tw = ctx.measureText(name).width;
-        ctx.fillStyle = 'rgba(8,6,18,0.78)';
-        ctx.fillRect(cx - tw / 2 - 3, y - 10, tw + 6, 11);
-        ctx.fillStyle = gold ? C.textGold : C.text;
-        ctx.textAlign = 'center';
-        ctx.fillText(name, cx, y);
-        ctx.textAlign = 'left';
-    }
-
-    function drawHumanoid(ctx, cx, cy, e) {
-        // Shadow
-        ctx.fillStyle = C.shadow;
-        ctx.beginPath(); ctx.ellipse(cx, cy + 30, 18, 5, 0, 0, Math.PI * 2); ctx.fill();
-
-        const live = e.hp > 0;
-        const base  = live ? '#5c3030' : '#2a1a20';
-        const armor = live ? '#4a3a4a' : '#252025';
-        const skin  = live ? '#3a2020' : '#1e1818';
-
-        // Legs
-        ctx.fillStyle = armor;
-        ctx.fillRect(cx - 10, cy + 14, 8, 18); ctx.fillRect(cx + 2, cy + 14, 8, 18);
-        ctx.fillStyle = '#1a1010';
-        ctx.fillRect(cx - 12, cy + 28, 10, 4); ctx.fillRect(cx + 2, cy + 28, 10, 4);
-
-        // Arms (drawn before body so body overlaps)
-        ctx.fillStyle = armor;
-        ctx.fillRect(cx - 22, cy - 14, 8, 24); ctx.fillRect(cx + 14, cy - 14, 8, 24);
-        ctx.fillStyle = skin;
-        ctx.fillRect(cx - 22, cy + 8, 8, 6);  ctx.fillRect(cx + 14, cy + 8, 8, 6);
-
-        // Torso
-        ctx.fillStyle = base;  ctx.fillRect(cx - 14, cy - 14, 28, 30);
-        ctx.fillStyle = armor; ctx.fillRect(cx - 10, cy - 10, 20, 20);
-        ctx.fillStyle = '#2a1a10'; ctx.fillRect(cx - 12, cy + 12, 24, 4); // belt
-
-        // Neck + head
-        ctx.fillStyle = skin; ctx.fillRect(cx - 5, cy - 20, 10, 8);
-        ctx.fillStyle = skin; ctx.fillRect(cx - 10, cy - 34, 20, 18);
-        ctx.fillStyle = '#2a2035'; ctx.fillRect(cx - 10, cy - 38, 20, 8); // hood
-
-        // Eyes
-        ctx.fillStyle = '#cc3030';
-        ctx.fillRect(cx - 7, cy - 28, 3, 3); ctx.fillRect(cx + 4, cy - 28, 3, 3);
-        ctx.fillStyle = 'rgba(200,40,40,0.35)';
-        ctx.fillRect(cx - 9, cy - 30, 7, 7); ctx.fillRect(cx + 2, cy - 30, 7, 7);
-
-        // Sword
-        ctx.fillStyle = '#999';
-        ctx.fillRect(cx + 20, cy - 20, 3, 34);
-        ctx.fillStyle = '#aaa'; ctx.fillRect(cx + 15, cy - 16, 13, 2);
-        ctx.fillStyle = '#604020'; ctx.fillRect(cx + 20, cy + 14, 3, 8);
-
-        nameTag(ctx, cx, cy - 46, e.name);
-    }
-
-    function drawWolf(ctx, cx, cy, e) {
-        ctx.fillStyle = C.shadow;
-        ctx.beginPath(); ctx.ellipse(cx, cy + 24, 26, 6, 0, 0, Math.PI * 2); ctx.fill();
-
-        const fur  = (e.sprite || '').includes('ash') ? '#4a4856' : '#5a4a3a';
-        const dark = (e.sprite || '').includes('ash') ? '#2a2834' : '#3a3028';
-
-        // Tail
-        ctx.fillStyle = fur;  ctx.fillRect(cx - 36, cy - 10, 14, 10);
-        ctx.fillStyle = dark; ctx.fillRect(cx - 40, cy - 16, 8, 12);
-
-        // Body
-        ctx.fillStyle = fur; ctx.fillRect(cx - 26, cy - 6, 46, 22);
-
-        // Legs
-        ctx.fillStyle = dark;
-        ctx.fillRect(cx - 22, cy + 16, 8, 12); ctx.fillRect(cx - 14, cy + 22, 10, 6);
-        ctx.fillRect(cx + 10, cy + 16, 8, 12); ctx.fillRect(cx + 14, cy + 22, 10, 6);
-
-        // Neck + head
-        ctx.fillStyle = fur; ctx.fillRect(cx + 14, cy - 14, 16, 18);
-        ctx.fillStyle = fur; ctx.fillRect(cx + 22, cy - 24, 22, 20);
-
-        // Ears
-        ctx.fillStyle = dark; ctx.fillRect(cx + 24, cy - 32, 5, 12); ctx.fillRect(cx + 34, cy - 30, 5, 10);
-
-        // Snout
-        ctx.fillStyle = dark; ctx.fillRect(cx + 38, cy - 16, 8, 8);
-
-        // Eyes
-        ctx.fillStyle = '#ffaa00'; ctx.fillRect(cx + 26, cy - 20, 4, 4); ctx.fillRect(cx + 34, cy - 20, 4, 4);
-        ctx.fillStyle = 'rgba(255,160,0,0.45)';
-        ctx.fillRect(cx + 23, cy - 23, 9, 9); ctx.fillRect(cx + 31, cy - 23, 9, 9);
-
-        // Teeth
-        ctx.fillStyle = '#ddd'; ctx.fillRect(cx + 38, cy - 9, 2, 4); ctx.fillRect(cx + 42, cy - 9, 2, 4);
-
-        nameTag(ctx, cx, cy - 42, e.name);
-    }
-
-    function drawSpirit(ctx, cx, cy, e) {
-        const bob = Math.sin(_pulse * 0.7) * 3;
-
-        // Outer glow
-        ctx.fillStyle = 'rgba(100,60,180,0.12)';
-        ctx.beginPath(); ctx.ellipse(cx, cy + bob, 38, 52, 0, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = 'rgba(100,60,180,0.10)';
-        ctx.beginPath(); ctx.ellipse(cx, cy + bob, 26, 38, 0, 0, Math.PI * 2); ctx.fill();
-
-        // Wispy tendrils
-        ctx.fillStyle = 'rgba(80,40,160,0.4)';
-        ctx.fillRect(cx - 6,  cy + 18 + bob, 4, 22);
-        ctx.fillRect(cx + 2,  cy + 22 + bob, 4, 18);
-        ctx.fillRect(cx - 16, cy + 12 + bob, 4, 16);
-        ctx.fillRect(cx + 12, cy + 12 + bob, 4, 20);
-
-        // Body
-        ctx.fillStyle = '#3a2060'; ctx.fillRect(cx - 20, cy - 22 + bob, 40, 44);
-        ctx.fillStyle = 'rgba(80,50,140,0.7)'; ctx.fillRect(cx - 14, cy - 16 + bob, 28, 36);
-
-        // Void face
-        ctx.fillStyle = '#0a0012'; ctx.fillRect(cx - 14, cy - 20 + bob, 28, 22);
-
-        // Eyes
-        ctx.fillStyle = '#cc99ff'; ctx.fillRect(cx - 8, cy - 16 + bob, 5, 5); ctx.fillRect(cx + 3, cy - 16 + bob, 5, 5);
-        ctx.fillStyle = 'rgba(180,140,255,0.55)';
-        ctx.fillRect(cx - 12, cy - 20 + bob, 13, 13); ctx.fillRect(cx - 1, cy - 20 + bob, 13, 13);
-
-        // Floating motes
-        const mx1 = cx + Math.sin(_pulse) * 22;
-        const my1 = cy - 10 + Math.cos(_pulse * 1.3) * 14 + bob;
-        ctx.fillStyle = 'rgba(140,100,220,0.65)'; ctx.fillRect(mx1, my1, 3, 3);
-        const mx2 = cx + Math.sin(_pulse + 2) * 26;
-        const my2 = cy + 6 + Math.cos(_pulse * 0.9 + 1) * 10 + bob;
-        ctx.fillRect(mx2, my2, 2, 2);
-
-        nameTag(ctx, cx, cy - 42 + bob, e.name);
-    }
-
-    function drawUndead(ctx, cx, cy, e) {
-        ctx.fillStyle = C.shadow;
-        ctx.beginPath(); ctx.ellipse(cx, cy + 30, 16, 5, 0, 0, Math.PI * 2); ctx.fill();
-
-        // Robe
-        ctx.fillStyle = '#2a2830'; ctx.fillRect(cx - 14, cy - 10, 28, 40);
-        ctx.fillStyle = '#1e1c24'; ctx.fillRect(cx - 10, cy + 6, 20, 28);
-
-        // Bony arms
-        ctx.fillStyle = '#9a9a80';
-        ctx.fillRect(cx - 24, cy - 8, 6, 24); ctx.fillRect(cx + 18, cy - 8, 6, 24);
-        ctx.fillStyle = '#b0b098';
-        ctx.fillRect(cx - 26, cy + 14, 8, 6); ctx.fillRect(cx + 18, cy + 14, 8, 6);
-        ctx.fillStyle = '#c0c0a0';
-        for (let i = 0; i < 3; i++) {
-            ctx.fillRect(cx - 26 + i * 2, cy + 20, 1, 4);
-            ctx.fillRect(cx + 18 + i * 2, cy + 20, 1, 4);
+    
+    // === INPUT ===
+    function handleInput(key) {
+        if (!active) return;
+        
+        switch (phase) {
+            case 'select':
+                handleMenuInput(key);
+                break;
+            case 'skill_select':
+                handleSkillInput(key);
+                break;
+            case 'item_select':
+                handleItemInput(key);
+                break;
+            case 'target':
+                handleTargetInput(key);
+                break;
         }
-
-        // Neck + skull
-        ctx.fillStyle = '#7a7a60'; ctx.fillRect(cx - 5, cy - 18, 10, 10);
-        ctx.fillStyle = '#9a9a7a'; ctx.fillRect(cx - 12, cy - 36, 24, 20);
-        ctx.fillStyle = '#8a8a6a'; ctx.fillRect(cx - 10, cy - 18, 20, 6);
-
-        // Eye sockets + glow
-        ctx.fillStyle = '#0a0a14'; ctx.fillRect(cx - 9, cy - 32, 6, 7); ctx.fillRect(cx + 3, cy - 32, 6, 7);
-        ctx.fillStyle = 'rgba(50,200,80,0.85)'; ctx.fillRect(cx - 8, cy - 31, 4, 5); ctx.fillRect(cx + 4, cy - 31, 4, 5);
-
-        // Teeth
-        ctx.fillStyle = '#c0c0a0';
-        for (let i = 0; i < 4; i++) ctx.fillRect(cx - 8 + i * 4, cy - 14, 2, 4);
-
-        // Hood
-        ctx.fillStyle = '#1a1820';
-        ctx.fillRect(cx - 14, cy - 42, 28, 16);
-        ctx.fillRect(cx - 10, cy - 28, 6, 8); ctx.fillRect(cx + 4, cy - 28, 6, 8);
-
-        nameTag(ctx, cx, cy - 52, e.name);
     }
-
-    function drawBoss(ctx, cx, cy, e) {
-        const bob = Math.sin(_pulse * 0.5) * 2;
-
-        // Aura
-        ctx.fillStyle = 'rgba(140,20,20,0.14)';
-        ctx.beginPath(); ctx.ellipse(cx, cy + bob, 58, 70, 0, 0, Math.PI * 2); ctx.fill();
-
-        ctx.fillStyle = C.shadow;
-        ctx.beginPath(); ctx.ellipse(cx, cy + 38, 30, 8, 0, 0, Math.PI * 2); ctx.fill();
-
-        // Legs
-        ctx.fillStyle = '#303040';
-        ctx.fillRect(cx - 16, cy + 20 + bob, 13, 22); ctx.fillRect(cx + 3, cy + 20 + bob, 13, 22);
-        ctx.fillStyle = '#1a1a28';
-        ctx.fillRect(cx - 18, cy + 36 + bob, 15, 6); ctx.fillRect(cx + 3, cy + 36 + bob, 15, 6);
-
-        // Arms
-        ctx.fillStyle = '#404050';
-        ctx.fillRect(cx - 32, cy - 20 + bob, 13, 34); ctx.fillRect(cx + 19, cy - 20 + bob, 13, 34);
-        // Claws
-        ctx.fillStyle = '#909098';
-        for (let i = 0; i < 3; i++) {
-            ctx.fillRect(cx - 32 + i * 4, cy + 12 + bob, 3, 9);
-            ctx.fillRect(cx + 19 + i * 4, cy + 12 + bob, 3, 9);
-        }
-
-        // Torso
-        ctx.fillStyle = '#2a2838'; ctx.fillRect(cx - 20, cy - 24 + bob, 40, 46);
-        ctx.fillStyle = '#3a3850'; ctx.fillRect(cx - 14, cy - 18 + bob, 28, 30);
-        ctx.fillStyle = '#4a4860';
-        ctx.fillRect(cx - 12, cy - 16 + bob, 12, 16); ctx.fillRect(cx, cy - 16 + bob, 12, 16);
-
-        // Head + horns
-        ctx.fillStyle = '#505060'; ctx.fillRect(cx - 20, cy - 56 + bob, 6, 18); ctx.fillRect(cx + 14, cy - 56 + bob, 6, 18);
-        ctx.fillStyle = '#1a1824'; ctx.fillRect(cx - 18, cy - 44 + bob, 36, 26);
-        ctx.fillStyle = '#0e0c18'; ctx.fillRect(cx - 14, cy - 40 + bob, 28, 18);
-
-        // Eyes
-        ctx.fillStyle = '#ff4020'; ctx.fillRect(cx - 10, cy - 36 + bob, 7, 7); ctx.fillRect(cx + 3, cy - 36 + bob, 7, 7);
-        ctx.fillStyle = 'rgba(255,60,20,0.5)';
-        ctx.fillRect(cx - 14, cy - 40 + bob, 15, 15); ctx.fillRect(cx - 1, cy - 40 + bob, 15, 15);
-        ctx.fillStyle = '#3a1010'; ctx.fillRect(cx - 9, cy - 26 + bob, 18, 4);
-
-        nameTag(ctx, cx, cy - 66 + bob, e.name, true);
+    
+    function handleMenuInput(key) {
+        if (key === 'up') menuIndex = (menuIndex - 1 + ACTIONS.length) % ACTIONS.length;
+        else if (key === 'down') menuIndex = (menuIndex + 1) % ACTIONS.length;
+        else if (key === 'confirm') selectAction(ACTIONS[menuIndex]);
+        playSound('menu_move');
     }
-
-    // ─────────────────────────────────────────────────
-    //  LIMB TARGETING OVERLAY
-    // ─────────────────────────────────────────────────
-    const ZONES = {
-        HEAD:      { dx:  0,   dy: -36, w: 22, h: 20 },
-        TORSO:     { dx:  0,   dy:  -4, w: 30, h: 28 },
-        LEFT_ARM:  { dx: -22,  dy:  -8, w: 10, h: 22 },
-        RIGHT_ARM: { dx:  22,  dy:  -8, w: 10, h: 22 },
-        LEGS:      { dx:  0,   dy:  20, w: 24, h: 20 },
-    };
-    const ZONES_WOLF = {
-        HEAD:      { dx:  28,  dy: -18, w: 24, h: 22 },
-        TORSO:     { dx:  -2,  dy:  -2, w: 32, h: 22 },
-        LEFT_ARM:  { dx: -10,  dy:  16, w: 12, h: 16 },
-        RIGHT_ARM: { dx:  14,  dy:  16, w: 12, h: 16 },
-        LEGS:      { dx: -30,  dy:  -8, w: 12, h: 16 },
-    };
-
-    function drawLimbOverlay(ctx, S) {
-        if (S.phase !== 'target') return;
-
-        const sp = (S.enemy.sprite || '').toLowerCase();
-        const zones = sp.includes('wolf') ? ZONES_WOLF : ZONES;
-        const pulse = (Math.sin(_pulse * 3) + 1) / 2;
-
-        for (let i = 0; i < S.limbOrder.length; i++) {
-            const key  = S.limbOrder[i];
-            const zone = zones[key];
-            if (!zone) continue;
-            const ls   = S.enemy.limbs[key];
-            const sel  = i === S.limbIndex;
-            const dead = ls.hp <= 0;
-            const lx   = ENEMY_X + zone.dx - zone.w / 2;
-            const ly   = ENEMY_Y + zone.dy - zone.h / 2;
-
-            if (dead) {
-                ctx.fillStyle = 'rgba(30,10,10,0.65)'; ctx.fillRect(lx, ly, zone.w, zone.h);
-                ctx.strokeStyle = '#551010'; ctx.lineWidth = 1; ctx.strokeRect(lx, ly, zone.w, zone.h);
-                ctx.strokeStyle = '#771010';
-                ctx.beginPath();
-                ctx.moveTo(lx + 2, ly + 2); ctx.lineTo(lx + zone.w - 2, ly + zone.h - 2);
-                ctx.moveTo(lx + zone.w - 2, ly + 2); ctx.lineTo(lx + 2, ly + zone.h - 2);
-                ctx.stroke();
+    
+    function handleSkillInput(key) {
+        const skills = player.skills.filter(s => s.mp <= player.mp);
+        if (key === 'up') subMenuIndex = (subMenuIndex - 1 + skills.length) % skills.length;
+        else if (key === 'down') subMenuIndex = (subMenuIndex + 1) % skills.length;
+        else if (key === 'confirm') {
+            selectedSkill = skills[subMenuIndex];
+            if (selectedSkill.type === 'heal') {
+                executeSkill();
             } else {
-                ctx.fillStyle = sel
-                    ? `rgba(200,50,50,${0.30 + pulse * 0.25})`
-                    : 'rgba(200,180,60,0.10)';
-                ctx.fillRect(lx, ly, zone.w, zone.h);
-
-                ctx.strokeStyle = sel
-                    ? `rgba(255,90,90,${0.65 + pulse * 0.35})`
-                    : 'rgba(180,160,60,0.35)';
-                ctx.lineWidth = sel ? 2 : 1;
-                ctx.strokeRect(lx, ly, zone.w, zone.h);
-
-                // Mini HP bar inside zone
-                const frac = ls.hp / ls.maxHp;
-                ctx.fillStyle = frac > 0.5 ? 'rgba(60,180,60,0.55)' : 'rgba(180,60,60,0.55)';
-                ctx.fillRect(lx + 1, ly + zone.h - 4, Math.round((zone.w - 2) * frac), 3);
-
-                // Label
-                ctx.font = '6px monospace';
-                ctx.textAlign = 'center';
-                ctx.fillStyle = sel ? '#ffaaaa' : '#888';
-                ctx.fillText(S.limbs[key].name, ENEMY_X + zone.dx, ly - 1);
+                phase = 'target';
             }
         }
-
-        ctx.textAlign = 'left';
-        ctx.lineWidth = 1;
-
-        // Instruction hint
-        ctx.fillStyle = 'rgba(8,6,18,0.78)';
-        ctx.fillRect(90, 147, 140, 11);
-        ctx.fillStyle = C.textGold;
-        ctx.font = '7px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('Z/S:choose   E:confirm   Esc:back', 160, 155);
-        ctx.textAlign = 'left';
+        else if (key === 'cancel') { phase = 'select'; subMenuIndex = 0; }
     }
-
-    // ─────────────────────────────────────────────────
-    //  UI STRIP  (y = 160 – 240)
-    // ─────────────────────────────────────────────────
-    function drawUI(ctx, S) {
-        drawMenu(ctx, S);
-        drawHPSection(ctx, S);
-        drawLog(ctx, S);
+    
+    function handleItemInput(key) {
+        const items = player.inventory.filter(i => i.count > 0);
+        if (key === 'up') subMenuIndex = (subMenuIndex - 1 + items.length) % items.length;
+        else if (key === 'down') subMenuIndex = (subMenuIndex + 1) % items.length;
+        else if (key === 'confirm') {
+            selectedItem = items[subMenuIndex];
+            useItem();
+        }
+        else if (key === 'cancel') { phase = 'select'; subMenuIndex = 0; }
     }
-
-    // ── Action menu (left, 96 × 78) ──
-    function drawMenu(ctx, S) {
-        const mx = 3, my = UI_Y + 3, mw = 92, mh = 74;
-
-        ctx.fillStyle = C.uiBg; ctx.fillRect(mx, my, mw, mh);
-        ctx.strokeStyle = C.uiBorder; ctx.strokeRect(mx, my, mw, mh);
-
-        const turnClr = S.turn === 'player' ? '#88cc88' : '#cc8888';
-        ctx.fillStyle = turnClr;
-        ctx.font = '7px monospace';
-        ctx.fillText(S.turn === 'player' ? '▶ YOUR TURN' : '▶ ENEMY TURN', mx + 4, my + 9);
-
-        ctx.strokeStyle = C.uiBorder;
-        ctx.beginPath(); ctx.moveTo(mx + 2, my + 12); ctx.lineTo(mx + mw - 2, my + 12); ctx.stroke();
-
-        if (S.phase === 'select' || S.phase === 'target') {
-            ctx.font = '8px monospace';
-            for (let i = 0; i < S.actions.length; i++) {
-                const act = S.actions[i];
-                const sel = S.phase === 'select' && i === S.menuIndex;
-                const iy  = my + 25 + i * 13;
-                if (sel) { ctx.fillStyle = C.uiActive; ctx.fillRect(mx + 2, iy - 9, mw - 4, 12); }
-                ctx.fillStyle = sel ? C.textBright : C.text;
-                ctx.fillText((sel ? '▸ ' : '  ') + act.name, mx + 4, iy);
-            }
-
-            // Target phase — show selected limb + hit%
-            if (S.phase === 'target') {
-                const lk  = S.limbOrder[S.limbIndex];
-                const lmb = S.limbs[lk];
-                ctx.fillStyle = C.uiActive; ctx.fillRect(mx + 2, my + mh - 22, mw - 4, 12);
-                ctx.fillStyle = '#ffaaaa'; ctx.font = '8px monospace';
-                ctx.fillText('→ ' + lmb.name, mx + 4, my + mh - 13);
-                ctx.fillStyle = C.textDim; ctx.font = '6px monospace';
-                const hitPct = Math.round(lmb.hitChance * 100);
-                const critPct = Math.round(lmb.crit * 100);
-                ctx.fillText('Hit ' + hitPct + '%  Crit ' + critPct + '%', mx + 4, my + mh - 4);
-            }
-        } else {
-            ctx.fillStyle = C.textDim; ctx.font = '8px monospace';
-            ctx.fillText('  ...', mx + 4, my + 38);
+    
+    function handleTargetInput(key) {
+        if (key === 'up' && limbIndex > 0) limbIndex--;
+        else if (key === 'down' && limbIndex < 4) limbIndex++;
+        else if (key === 'left' && (limbIndex === 2 || limbIndex === 3)) limbIndex = 1;
+        else if (key === 'right' && (limbIndex === 1 || limbIndex === 2)) limbIndex = 3;
+        else if (key === 'confirm') executeAttack();
+        else if (key === 'cancel') { 
+            phase = selectedSkill ? 'skill_select' : 'select'; 
+            selectedSkill = null;
         }
     }
-
-    // ── HP section (centre, 132 × 78) ──
-    function drawHPSection(ctx, S) {
-        const hx = 99, hy = UI_Y + 3, hw = 128, hh = 74;
-
-        ctx.fillStyle = C.uiBg; ctx.fillRect(hx, hy, hw, hh);
-        ctx.strokeStyle = C.uiBorder; ctx.strokeRect(hx, hy, hw, hh);
-
-        // Player
-        ctx.fillStyle = C.text; ctx.font = '7px monospace';
-        ctx.fillText('PLAYER', hx + 4, hy + 9);
-        hpBar(ctx, hx + 4, hy + 12, hw - 8, 9, S.player.hp, S.player.maxHp, true);
-        ctx.fillStyle = C.textDim; ctx.font = '6px monospace';
-        ctx.fillText(S.player.hp + ' / ' + S.player.maxHp, hx + 4, hy + 29);
-
-        // Player limb mini-bars
-        const LKEYS = ['HEAD', 'TORSO', 'LEGS', 'LEFT_ARM', 'RIGHT_ARM'];
-        const LLBL  = { HEAD: 'Hd', TORSO: 'Tr', LEGS: 'Lg', LEFT_ARM: 'LA', RIGHT_ARM: 'RA' };
-        ctx.font = '6px monospace';
-        for (let i = 0; i < LKEYS.length; i++) {
-            const k  = LKEYS[i];
-            const ls = S.player.limbs[k];
-            const f  = ls.hp / ls.maxHp;
-            const bx = hx + 4 + i * 24, by = hy + 33;
-            ctx.fillStyle = f <= 0 ? '#3a1010' : '#2a3020';
-            ctx.fillRect(bx, by, 21, 10);
-            if (f > 0) {
-                ctx.fillStyle = f < 0.4 ? C.hpRed : C.hpGreen;
-                ctx.fillRect(bx + 1, by + 1, Math.round(19 * f), 8);
-            }
-            ctx.strokeStyle = f <= 0 ? '#551010' : '#3a4a30';
-            ctx.strokeRect(bx, by, 21, 10);
-            ctx.fillStyle = f <= 0 ? '#664040' : '#aabba0';
-            ctx.fillText(LLBL[k], bx + 2, by + 8);
+    
+    function selectAction(action) {
+        selectedAction = action;
+        
+        switch (action.id) {
+            case 'attack':
+                phase = 'target';
+                break;
+            case 'skills':
+                phase = 'skill_select';
+                subMenuIndex = 0;
+                break;
+            case 'items':
+                phase = 'item_select';
+                subMenuIndex = 0;
+                break;
+            case 'defend':
+                player.defending = true;
+                showMessage('Defending!');
+                endPlayerTurn();
+                break;
+            case 'flee':
+                if (Math.random() < 0.4) {
+                    showMessage('Escaped!');
+                    setTimeout(() => end(false), 800);
+                } else {
+                    showMessage('Cannot escape!');
+                    endPlayerTurn();
+                }
+                break;
         }
-
-        // Divider
-        ctx.strokeStyle = C.uiBorder;
-        ctx.beginPath(); ctx.moveTo(hx + 2, hy + 47); ctx.lineTo(hx + hw - 2, hy + 47); ctx.stroke();
-
+    }
+    
+    // === COMBAT ACTIONS ===
+    function executeAttack() {
+        const limbKey = LIMB_ORDER[limbIndex];
+        const limb = LIMBS[limbKey];
+        const limbState = enemy.limbs[limbKey];
+        
+        if (limbState.hp <= 0) {
+            showMessage('Already destroyed!');
+            return;
+        }
+        
+        // Hit check
+        const hitChance = selectedSkill ? (limb.hit * (selectedSkill.acc || 1)) : limb.hit;
+        if (Math.random() > hitChance) {
+            showMessage('MISS!');
+            playSound('miss');
+            endPlayerTurn();
+            return;
+        }
+        
+        // Damage calc
+        let power = selectedSkill ? selectedSkill.power : 1.0;
+        let baseDmg = selectedSkill?.type === 'magic' ? player.mag : player.atk;
+        let damage = Math.floor((baseDmg - enemy.def * 0.5) * power * limb.dmg);
+        
+        // Crit
+        const isCrit = Math.random() < limb.crit;
+        if (isCrit) damage = Math.floor(damage * 2);
+        
+        // Variance
+        damage = Math.floor(damage * (0.9 + Math.random() * 0.2));
+        damage = Math.max(1, damage);
+        
+        // Apply
+        limbState.hp = Math.max(0, limbState.hp - damage);
+        enemy.hp = Math.max(0, enemy.hp - damage);
+        
+        // MP cost
+        if (selectedSkill) {
+            player.mp -= selectedSkill.mp;
+        }
+        
+        // Effects
+        showMessage((isCrit ? 'CRITICAL! ' : '') + damage + ' damage!');
+        playSound(isCrit ? 'hit_crit' : 'hit');
+        
+        // Life drain
+        if (selectedSkill?.type === 'drain') {
+            const heal = Math.floor(damage * 0.5);
+            player.hp = Math.min(player.maxHp, player.hp + heal);
+            showMessage('Drained ' + heal + ' HP!');
+        }
+        
+        // Limb destroyed
+        if (limbState.hp <= 0) {
+            showMessage(limb.name + ' destroyed!');
+            if (limbKey === 'HEAD') enemy.hp = 0;
+            else if (limbKey === 'L_ARM' || limbKey === 'R_ARM') enemy.atk *= 0.7;
+        }
+        
+        // Check death
+        if (enemy.hp <= 0) {
+            setTimeout(() => end(true), 1000);
+            return;
+        }
+        
+        selectedSkill = null;
+        endPlayerTurn();
+    }
+    
+    function executeSkill() {
+        if (selectedSkill.type === 'heal') {
+            player.mp -= selectedSkill.mp;
+            player.hp = Math.min(player.maxHp, player.hp + selectedSkill.power);
+            showMessage('Healed ' + selectedSkill.power + ' HP!');
+            playSound('heal');
+            selectedSkill = null;
+            endPlayerTurn();
+        }
+    }
+    
+    function useItem() {
+        selectedItem.count--;
+        
+        switch (selectedItem.effect) {
+            case 'heal':
+                player.hp = Math.min(player.maxHp, player.hp + selectedItem.value);
+                showMessage('Restored ' + selectedItem.value + ' HP!');
+                playSound('heal');
+                break;
+            case 'mp':
+                player.mp = Math.min(player.maxMp, player.mp + selectedItem.value);
+                showMessage('Restored ' + selectedItem.value + ' MP!');
+                break;
+            case 'damage':
+                enemy.hp = Math.max(0, enemy.hp - selectedItem.value);
+                showMessage(selectedItem.value + ' damage!');
+                playSound('explosion');
+                if (enemy.hp <= 0) {
+                    setTimeout(() => end(true), 800);
+                    return;
+                }
+                break;
+        }
+        
+        selectedItem = null;
+        phase = 'select';
+        endPlayerTurn();
+    }
+    
+    function endPlayerTurn() {
+        phase = 'animate';
+        turn = 'enemy';
+        setTimeout(enemyTurn, 800);
+    }
+    
+    function enemyTurn() {
+        player.defending = false;
+        
+        // Simple AI
+        const validLimbs = LIMB_ORDER.filter(l => player.limbs[l].hp > 0);
+        if (validLimbs.length === 0) {
+            end(false);
+            return;
+        }
+        
+        const targetLimb = validLimbs[Math.floor(Math.random() * validLimbs.length)];
+        const limb = LIMBS[targetLimb];
+        
+        // Hit check
+        if (Math.random() > 0.75) {
+            showMessage('Dodged!');
+            endEnemyTurn();
+            return;
+        }
+        
+        // Damage
+        let damage = Math.max(1, enemy.atk - player.def);
+        if (player.defending) damage = Math.floor(damage * 0.5);
+        damage = Math.floor(damage * (0.9 + Math.random() * 0.2));
+        
+        player.limbs[targetLimb].hp = Math.max(0, player.limbs[targetLimb].hp - damage);
+        player.hp = Math.max(0, player.hp - damage);
+        
+        showMessage(enemy.name + ' hits ' + limb.name + ' for ' + damage + '!');
+        playSound('hurt');
+        
+        if (player.hp <= 0) {
+            showMessage('Defeated...');
+            setTimeout(() => end(false), 1000);
+            return;
+        }
+        
+        endEnemyTurn();
+    }
+    
+    function endEnemyTurn() {
+        setTimeout(() => {
+            turn = 'player';
+            phase = 'select';
+            menuIndex = 0;
+        }, 600);
+    }
+    
+    // === HELPERS ===
+    function showMessage(msg) {
+        message = msg;
+        messageTimer = 2;
+    }
+    
+    function playSound(name) {
+        if (typeof GameAudio !== 'undefined') GameAudio.playSFX(name);
+    }
+    
+    // === UPDATE ===
+    function update(dt) {
+        if (!active) return;
+        if (messageTimer > 0) messageTimer -= dt;
+    }
+    
+    // === RENDER ===
+    function render(ctx) {
+        if (!active) return;
+        
+        const W = 320, H = 240;
+        
+        // Background
+        ctx.fillStyle = '#0a0a10';
+        ctx.fillRect(0, 0, W, H);
+        
+        // Ground line
+        ctx.fillStyle = '#1a1a20';
+        ctx.fillRect(0, 150, W, 90);
+        ctx.strokeStyle = '#2a2a30';
+        ctx.beginPath();
+        ctx.moveTo(0, 150);
+        ctx.lineTo(W, 150);
+        ctx.stroke();
+        
         // Enemy
-        ctx.fillStyle = '#cc8888'; ctx.font = '7px monospace';
-        ctx.fillText(S.enemy.name.toUpperCase().slice(0, 16), hx + 4, hy + 56);
-        hpBar(ctx, hx + 4, hy + 59, hw - 8, 9, S.enemy.hp, S.enemy.maxHp, false);
-        ctx.fillStyle = C.textDim; ctx.font = '6px monospace';
-        ctx.fillText(S.enemy.hp + ' / ' + S.enemy.maxHp, hx + 4, hy + 76);
-    }
-
-    function hpBar(ctx, x, y, w, h, hp, maxHp, isPlayer) {
-        const f = Math.max(0, hp / maxHp);
-        ctx.fillStyle = C.hpBg; ctx.fillRect(x, y, w, h);
-        const col = f > 0.5 ? (isPlayer ? C.hpGreen : C.hpEnemy)
-                  : f > 0.25 ? C.hpYellow
-                  : C.hpRed;
-        ctx.fillStyle = col; ctx.fillRect(x + 1, y + 1, Math.round((w - 2) * f), h - 2);
-        ctx.strokeStyle = C.hpBorder; ctx.lineWidth = 1; ctx.strokeRect(x, y, w, h);
-    }
-
-    // ── Combat log (right, 84 × 78) ──
-    function drawLog(ctx, S) {
-        const lx = 231, ly = UI_Y + 3, lw = 86, lh = 74;
-
-        ctx.fillStyle = C.uiBg; ctx.fillRect(lx, ly, lw, lh);
-        ctx.strokeStyle = C.uiBorder; ctx.strokeRect(lx, ly, lw, lh);
-
-        ctx.fillStyle = C.textDim; ctx.font = '7px monospace';
-        ctx.fillText('LOG', lx + 4, ly + 9);
-        ctx.strokeStyle = C.uiBorder;
-        ctx.beginPath(); ctx.moveTo(lx + 2, ly + 12); ctx.lineTo(lx + lw - 2, ly + 12); ctx.stroke();
-
-        // Active message highlighted
-        if (S.messageTimer > 0) {
-            ctx.fillStyle = 'rgba(40,30,10,0.6)'; ctx.fillRect(lx + 2, ly + 14, lw - 4, 14);
-            ctx.fillStyle = C.textGold; ctx.font = '7px monospace';
-            wrapText(ctx, S.message, lx + 4, ly + 23, lw - 8, 8);
+        renderEnemy(ctx, 200, 100);
+        
+        // Player (back view)
+        renderPlayerBack(ctx, 80, 130);
+        
+        // Target UI
+        if (phase === 'target') {
+            renderTargetUI(ctx, 200, 100);
         }
-
-        // Log entries (faded history)
-        ctx.font = '6px monospace';
-        const recent = _log.slice(-4);
-        for (let i = 0; i < recent.length; i++) {
-            const e = recent[i];
-            ctx.globalAlpha = 0.35 + (i / recent.length) * 0.65;
-            ctx.fillStyle = e.color;
-            wrapText(ctx, e.text, lx + 3, ly + 33 + i * 10, lw - 6, 8);
+        
+        // UI Panels
+        renderPlayerStatus(ctx);
+        renderEnemyStatus(ctx);
+        renderActionMenu(ctx);
+        
+        // Message
+        if (messageTimer > 0) {
+            ctx.fillStyle = 'rgba(0,0,0,0.8)';
+            ctx.fillRect(60, 60, 200, 30);
+            ctx.strokeStyle = '#666';
+            ctx.strokeRect(60, 60, 200, 30);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 12px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(message, 160, 80);
+            ctx.textAlign = 'left';
         }
-        ctx.globalAlpha = 1;
     }
-
-    function wrapText(ctx, text, x, y, maxW, lineH) {
-        const words = text.split(' ');
-        let line = '';
-        let cy = y;
-        for (const word of words) {
-            const test = line ? line + ' ' + word : word;
-            if (ctx.measureText(test).width > maxW && line) {
-                ctx.fillText(line, x, cy);
-                cy += lineH;
-                line = word;
-            } else {
-                line = test;
+    
+    function renderEnemy(ctx, x, y) {
+        // Use detailed sprite if available
+        if (typeof SpriteSheet !== 'undefined') {
+            // Scale up 2x for combat view
+            ctx.save();
+            ctx.translate(x - 16, y - 16);
+            ctx.scale(2, 2);
+            SpriteSheet.render(ctx, enemy.sprite, 0, 0);
+            ctx.restore();
+        } else {
+            ctx.fillStyle = '#804040';
+            ctx.fillRect(x - 16, y - 24, 32, 40);
+        }
+        
+        // Name
+        ctx.fillStyle = '#fff';
+        ctx.font = '10px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(enemy.name, x, y - 36);
+        ctx.textAlign = 'left';
+    }
+    
+    function renderPlayerBack(ctx, x, y) {
+        // Back of player
+        ctx.fillStyle = '#3a4a3a';
+        ctx.fillRect(x - 12, y - 20, 24, 36);
+        // Head
+        ctx.fillStyle = '#c0a080';
+        ctx.fillRect(x - 8, y - 28, 16, 10);
+        // Hair
+        ctx.fillStyle = '#4a3a2a';
+        ctx.fillRect(x - 8, y - 30, 16, 6);
+    }
+    
+    function renderTargetUI(ctx, ex, ey) {
+        // Draw limb hitboxes on enemy
+        for (let i = 0; i < LIMB_ORDER.length; i++) {
+            const limbKey = LIMB_ORDER[i];
+            const limb = LIMBS[limbKey];
+            const limbState = enemy.limbs[limbKey];
+            const isSelected = i === limbIndex;
+            const isDead = limbState.hp <= 0;
+            
+            const lx = ex + limb.pos.x - 10;
+            const ly = ey + limb.pos.y - 8;
+            const w = limbKey === 'TORSO' ? 20 : 16;
+            const h = limbKey === 'HEAD' ? 12 : 16;
+            
+            // Box
+            ctx.fillStyle = isDead ? '#333' : (isSelected ? 'rgba(255,80,80,0.5)' : 'rgba(100,100,100,0.3)');
+            ctx.fillRect(lx, ly, w, h);
+            ctx.strokeStyle = isSelected ? '#ff6666' : '#666';
+            ctx.lineWidth = isSelected ? 2 : 1;
+            ctx.strokeRect(lx, ly, w, h);
+            
+            // HP
+            if (!isDead) {
+                ctx.fillStyle = '#fff';
+                ctx.font = '8px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(limbState.hp, ex + limb.pos.x, ey + limb.pos.y + 2);
             }
         }
-        if (line) ctx.fillText(line, x, cy);
+        ctx.textAlign = 'left';
+        ctx.lineWidth = 1;
+        
+        // Selected name
+        const sel = LIMBS[LIMB_ORDER[limbIndex]];
+        ctx.fillStyle = '#fff';
+        ctx.font = '10px monospace';
+        ctx.fillText('Target: ' + sel.name, 120, 160);
     }
-
-    console.log('[CombatEnhanced] Loaded — enhanced combat visuals active');
-
+    
+    function renderPlayerStatus(ctx) {
+        // Panel
+        ctx.fillStyle = 'rgba(0,0,0,0.8)';
+        ctx.fillRect(4, 4, 100, 50);
+        ctx.strokeStyle = '#444';
+        ctx.strokeRect(4, 4, 100, 50);
+        
+        ctx.font = '9px monospace';
+        
+        // HP
+        ctx.fillStyle = '#888';
+        ctx.fillText('HP', 8, 18);
+        ctx.fillStyle = '#222';
+        ctx.fillRect(24, 10, 74, 10);
+        ctx.fillStyle = player.hp < player.maxHp * 0.3 ? '#a03030' : '#30a030';
+        ctx.fillRect(24, 10, 74 * (player.hp / player.maxHp), 10);
+        ctx.fillStyle = '#fff';
+        ctx.fillText(player.hp + '/' + player.maxHp, 28, 18);
+        
+        // MP
+        ctx.fillStyle = '#888';
+        ctx.fillText('MP', 8, 32);
+        ctx.fillStyle = '#222';
+        ctx.fillRect(24, 24, 74, 10);
+        ctx.fillStyle = '#3050a0';
+        ctx.fillRect(24, 24, 74 * (player.mp / player.maxMp), 10);
+        ctx.fillStyle = '#fff';
+        ctx.fillText(player.mp + '/' + player.maxMp, 28, 32);
+        
+        // Status
+        if (player.defending) {
+            ctx.fillStyle = '#80a0ff';
+            ctx.fillText('DEFENDING', 8, 48);
+        }
+    }
+    
+    function renderEnemyStatus(ctx) {
+        // Panel
+        ctx.fillStyle = 'rgba(0,0,0,0.8)';
+        ctx.fillRect(216, 4, 100, 30);
+        ctx.strokeStyle = '#444';
+        ctx.strokeRect(216, 4, 100, 30);
+        
+        ctx.fillStyle = '#c0a0a0';
+        ctx.font = '10px monospace';
+        ctx.fillText(enemy.name, 220, 16);
+        
+        // HP bar
+        ctx.fillStyle = '#222';
+        ctx.fillRect(220, 20, 90, 8);
+        ctx.fillStyle = '#a03030';
+        ctx.fillRect(220, 20, 90 * (enemy.hp / enemy.maxHp), 8);
+    }
+    
+    function renderActionMenu(ctx) {
+        const menuX = 4, menuY = 180;
+        const menuW = 80, menuH = 56;
+        
+        ctx.fillStyle = 'rgba(0,0,0,0.9)';
+        ctx.fillRect(menuX, menuY, menuW, menuH);
+        ctx.strokeStyle = '#555';
+        ctx.strokeRect(menuX, menuY, menuW, menuH);
+        
+        ctx.font = '9px monospace';
+        
+        if (phase === 'select') {
+            for (let i = 0; i < ACTIONS.length; i++) {
+                const a = ACTIONS[i];
+                const isSelected = i === menuIndex;
+                ctx.fillStyle = isSelected ? '#ffcc00' : '#888';
+                ctx.fillText((isSelected ? '▶ ' : '  ') + a.name, menuX + 4, menuY + 12 + i * 10);
+            }
+        } else if (phase === 'skill_select') {
+            ctx.fillStyle = '#80a0ff';
+            ctx.fillText('= Skills =', menuX + 4, menuY + 10);
+            
+            const skills = player.skills;
+            for (let i = 0; i < skills.length; i++) {
+                const s = skills[i];
+                const canUse = s.mp <= player.mp;
+                const isSelected = i === subMenuIndex;
+                ctx.fillStyle = !canUse ? '#444' : (isSelected ? '#ffcc00' : '#888');
+                const prefix = isSelected ? '▶' : ' ';
+                ctx.fillText(prefix + s.name, menuX + 2, menuY + 22 + i * 9);
+                ctx.fillStyle = '#6688aa';
+                ctx.fillText(s.mp, menuX + 66, menuY + 22 + i * 9);
+            }
+            
+            // Skill desc
+            if (skills[subMenuIndex]) {
+                ctx.fillStyle = 'rgba(0,0,0,0.9)';
+                ctx.fillRect(90, 200, 140, 20);
+                ctx.fillStyle = '#aaa';
+                ctx.fillText(skills[subMenuIndex].desc, 94, 214);
+            }
+        } else if (phase === 'item_select') {
+            ctx.fillStyle = '#a0ff80';
+            ctx.fillText('= Items =', menuX + 4, menuY + 10);
+            
+            const items = player.inventory.filter(i => i.count > 0);
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                const isSelected = i === subMenuIndex;
+                ctx.fillStyle = isSelected ? '#ffcc00' : '#888';
+                const prefix = isSelected ? '▶' : ' ';
+                ctx.fillText(prefix + item.name, menuX + 2, menuY + 22 + i * 9);
+                ctx.fillStyle = '#888';
+                ctx.fillText('x' + item.count, menuX + 64, menuY + 22 + i * 9);
+            }
+        }
+    }
+    
+    // === KEY HANDLER ===
+    document.addEventListener('keydown', (e) => {
+        if (!active) return;
+        
+        const keyMap = {
+            'ArrowUp': 'up', 'KeyW': 'up', 'KeyZ': 'up',
+            'ArrowDown': 'down', 'KeyS': 'down',
+            'ArrowLeft': 'left', 'KeyA': 'left', 'KeyQ': 'left',
+            'ArrowRight': 'right', 'KeyD': 'right',
+            'Enter': 'confirm', 'Space': 'confirm', 'KeyE': 'confirm',
+            'Escape': 'cancel', 'Backspace': 'cancel'
+        };
+        
+        const action = keyMap[e.code];
+        if (action) {
+            e.preventDefault();
+            handleInput(action);
+        }
+    });
+    
+    return {
+        start,
+        end,
+        update,
+        render,
+        isActive: () => active
+    };
+    
 })();
+
+console.log('[CombatEnhanced] Initialized');

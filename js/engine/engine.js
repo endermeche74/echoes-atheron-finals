@@ -83,22 +83,21 @@ const Engine = (function() {
     }
 
     function createCanvas() {
-        // Create container
+        // Fullscreen overlay container
         canvasContainer = document.createElement('div');
         canvasContainer.id = 'canvas-container';
         canvasContainer.style.cssText = `
             display: none;
-            position: relative;
-            width: ${CANVAS_WIDTH * SCALE}px;
-            height: ${CANVAS_HEIGHT * SCALE}px;
-            margin: 0 auto;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 500;
             background: ${PALETTE.void};
-            border: 2px solid ${PALETTE.uiBorder};
             image-rendering: pixelated;
             image-rendering: crisp-edges;
         `;
 
-        // Create canvas
+        // Canvas fills the container — CSS scales it, keeping pixel art sharp
         canvas = document.createElement('canvas');
         canvas.id = 'game-canvas';
         canvas.width = CANVAS_WIDTH;
@@ -111,19 +110,12 @@ const Engine = (function() {
         `;
 
         canvasContainer.appendChild(canvas);
-        
-        // Find or create game area
-        const gameArea = document.getElementById('game') || document.body;
-        textContainer = document.getElementById('text-container') || 
-                        document.querySelector('.game-content') ||
-                        gameArea.querySelector('div');
-        
-        // Insert canvas container
-        if (textContainer) {
-            textContainer.parentNode.insertBefore(canvasContainer, textContainer);
-        } else {
-            gameArea.insertBefore(canvasContainer, gameArea.firstChild);
-        }
+        document.body.appendChild(canvasContainer);
+
+        // Remember the page UI so we can hide/show it
+        textContainer = document.getElementById('app') ||
+                        document.getElementById('body') ||
+                        document.querySelector('header')?.parentElement;
 
         // Get context
         ctx = canvas.getContext('2d');

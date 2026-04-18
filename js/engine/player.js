@@ -146,27 +146,24 @@ const Player = (function() {
     function tryInteract() {
         if (typeof Tilemap === 'undefined') return;
 
-        // Check tile in front of player first
-        let checkX = tx, checkY = ty;
-        switch (facing) {
-            case 'up':    checkY -= 1; break;
-            case 'down':  checkY += 1; break;
-            case 'left':  checkX -= 1; break;
-            case 'right': checkX += 1; break;
-        }
+        // Scan all entities within 1.5 tiles — no pixel-perfect positioning needed
+        const RADIUS = 1.5;
+        const pcx = x / TILE + 0.5;   // player center in tile units
+        const pcy = y / TILE + 0.5;
 
-        // Search facing tile, then player's own tile (for items on same tile)
-        const candidates = [
-            Tilemap.getEntityAt(checkX, checkY),
-            Tilemap.getEntityAt(tx, ty)
-        ];
+        let best = null, bestDist = RADIUS + 1;
 
-        for (const entity of candidates) {
-            if (entity) {
-                handleEntity(entity);
-                return;
+        for (const entity of Tilemap.getEntities()) {
+            const ecx = entity.x + 0.5;
+            const ecy = entity.y + 0.5;
+            const dist = Math.hypot(ecx - pcx, ecy - pcy);
+            if (dist <= RADIUS && dist < bestDist) {
+                best = entity;
+                bestDist = dist;
             }
         }
+
+        if (best) handleEntity(best);
     }
     
     function handleEntity(entity) {
@@ -278,18 +275,14 @@ const Player = (function() {
             ctx.fillRect(x + 9, y + 13, 3, 3);
         }
         
-        // Interaction indicator when near entity
+        // [E] prompt — same 1.5-tile radius as tryInteract
         if (typeof Tilemap !== 'undefined') {
-            let checkX = tx, checkY = ty;
-            switch (facing) {
-                case 'up':    checkY -= 1; break;
-                case 'down':  checkY += 1; break;
-                case 'left':  checkX -= 1; break;
-                case 'right': checkX += 1; break;
-            }
-            const entity = Tilemap.getEntityAt(checkX, checkY);
-            if (entity) {
-                // Draw [E] prompt
+            const RADIUS = 1.5;
+            const pcx = x / TILE + 0.5, pcy = y / TILE + 0.5;
+            const nearby = Tilemap.getEntities().some(e =>
+                Math.hypot(e.x + 0.5 - pcx, e.y + 0.5 - pcy) <= RADIUS
+            );
+            if (nearby) {
                 ctx.fillStyle = P.uiBg + 'dd';
                 ctx.fillRect(x + 4, y - 10, 12, 10);
                 ctx.strokeStyle = P.uiBorder;

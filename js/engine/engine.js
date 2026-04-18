@@ -11,7 +11,7 @@ const Engine = (function() {
     const CANVAS_TILES_Y = 15;  // 240px tall
     const CANVAS_WIDTH = CANVAS_TILES_X * TILE_SIZE;
     const CANVAS_HEIGHT = CANVAS_TILES_Y * TILE_SIZE;
-    const SCALE = 2;  // 2x upscale for crisp pixels (640x480 display)
+    const SCALE = 3;  // display scale (canvas is CSS-stretched to fullscreen)
     const TARGET_FPS = 60;
     const FRAME_TIME = 1000 / TARGET_FPS;
 
@@ -226,6 +226,9 @@ const Engine = (function() {
         const deltaTime = currentTime - lastTime;
         lastTime = currentTime;
         accumulator += deltaTime;
+
+        // Cap accumulator — prevents cooldowns draining after tab-switch/pause
+        if (accumulator > FRAME_TIME * 5) accumulator = FRAME_TIME * 5;
 
         // Fixed timestep updates
         while (accumulator >= FRAME_TIME) {

@@ -81,10 +81,9 @@ const Tilemap = (function() {
         entities = (map.entities || []).map(e => ({...e}));  // Deep copy
         transitions = map.transitions || [];
         
-        // Set camera bounds
+        // Set camera bounds only — snap happens after player is repositioned
         if (typeof Camera !== 'undefined') {
             Camera.setMapBounds(mapWidth * TILE, mapHeight * TILE);
-            Camera.snapToPlayer();
         }
         
         console.log(`[Tilemap] Loaded ${mapWidth}x${mapHeight} map with ${entities.length} entities`);
@@ -300,12 +299,42 @@ const Tilemap = (function() {
             case TILES.CRATE:
                 ctx.fillStyle = P.stone;
                 ctx.fillRect(px, py, TILE, TILE);
-                // Crate
                 ctx.fillStyle = P.wood;
                 ctx.fillRect(px + 2, py + 4, 12, 12);
                 ctx.fillStyle = P.shadow;
                 ctx.fillRect(px + 2, py + 9, 12, 1);
                 ctx.fillRect(px + 7, py + 4, 1, 12);
+                break;
+
+            case TILES.TABLE:
+                ctx.fillStyle = P.stone;
+                ctx.fillRect(px, py, TILE, TILE);
+                ctx.fillStyle = P.wood;
+                ctx.fillRect(px + 1, py + 5, TILE - 2, 5);
+                ctx.fillStyle = P.shadow;
+                ctx.fillRect(px + 2, py + 10, 2, 4);
+                ctx.fillRect(px + TILE - 4, py + 10, 2, 4);
+                break;
+
+            case TILES.CHAIR:
+                ctx.fillStyle = P.stone;
+                ctx.fillRect(px, py, TILE, TILE);
+                ctx.fillStyle = P.wood;
+                ctx.fillRect(px + 4, py + 2, 8, 3);  // back
+                ctx.fillRect(px + 4, py + 7, 8, 3);  // seat
+                ctx.fillRect(px + 4, py + 10, 2, 4); // legs
+                ctx.fillRect(px + 10, py + 10, 2, 4);
+                break;
+
+            case TILES.BED:
+                ctx.fillStyle = P.stone;
+                ctx.fillRect(px, py, TILE, TILE);
+                ctx.fillStyle = P.wood;
+                ctx.fillRect(px + 1, py + 2, TILE - 2, TILE - 4);
+                ctx.fillStyle = '#707080';
+                ctx.fillRect(px + 2, py + 3, 5, 4);  // pillow
+                ctx.fillStyle = '#404858';
+                ctx.fillRect(px + 2, py + 8, 12, 5);  // blanket
                 break;
                 
             case TILES.STAIRS_UP:
@@ -320,14 +349,55 @@ const Tilemap = (function() {
                 break;
                 
             case TILES.EXIT_N:
-            case TILES.EXIT_S:
-            case TILES.EXIT_E:
-            case TILES.EXIT_W:
-                // Transition zone - subtle glow
                 ctx.fillStyle = P.stone;
                 ctx.fillRect(px, py, TILE, TILE);
-                ctx.fillStyle = 'rgba(150, 140, 100, 0.2)';
+                ctx.fillStyle = 'rgba(180,160,60,0.3)';
                 ctx.fillRect(px, py, TILE, TILE);
+                // upward arrow
+                ctx.fillStyle = 'rgba(230,210,90,0.9)';
+                ctx.fillRect(px + 7, py + 3, 2, 8);
+                ctx.fillRect(px + 5, py + 5, 2, 2);
+                ctx.fillRect(px + 9, py + 5, 2, 2);
+                ctx.fillRect(px + 4, py + 7, 1, 1);
+                ctx.fillRect(px + 11, py + 7, 1, 1);
+                break;
+
+            case TILES.EXIT_S:
+                ctx.fillStyle = P.stone;
+                ctx.fillRect(px, py, TILE, TILE);
+                ctx.fillStyle = 'rgba(180,160,60,0.3)';
+                ctx.fillRect(px, py, TILE, TILE);
+                // downward arrow
+                ctx.fillStyle = 'rgba(230,210,90,0.9)';
+                ctx.fillRect(px + 7, py + 5, 2, 8);
+                ctx.fillRect(px + 5, py + 9, 2, 2);
+                ctx.fillRect(px + 9, py + 9, 2, 2);
+                ctx.fillRect(px + 4, py + 8, 1, 1);
+                ctx.fillRect(px + 11, py + 8, 1, 1);
+                break;
+
+            case TILES.EXIT_E:
+                ctx.fillStyle = P.stone;
+                ctx.fillRect(px, py, TILE, TILE);
+                ctx.fillStyle = 'rgba(180,160,60,0.3)';
+                ctx.fillRect(px, py, TILE, TILE);
+                // rightward arrow
+                ctx.fillStyle = 'rgba(230,210,90,0.9)';
+                ctx.fillRect(px + 4, py + 7, 8, 2);
+                ctx.fillRect(px + 9, py + 5, 2, 2);
+                ctx.fillRect(px + 9, py + 9, 2, 2);
+                break;
+
+            case TILES.EXIT_W:
+                ctx.fillStyle = P.stone;
+                ctx.fillRect(px, py, TILE, TILE);
+                ctx.fillStyle = 'rgba(180,160,60,0.3)';
+                ctx.fillRect(px, py, TILE, TILE);
+                // leftward arrow
+                ctx.fillStyle = 'rgba(230,210,90,0.9)';
+                ctx.fillRect(px + 4, py + 7, 8, 2);
+                ctx.fillRect(px + 4, py + 5, 2, 2);
+                ctx.fillRect(px + 4, py + 9, 2, 2);
                 break;
                 
             case TILES.BLOOD:
@@ -347,10 +417,31 @@ const Tilemap = (function() {
                 ctx.fillRect(px + 1, py + 10, 5, 4);
                 ctx.fillRect(px + 8, py + 12, 4, 3);
                 break;
-                
+
+            case TILES.CRACK:
+                ctx.fillStyle = P.stone;
+                ctx.fillRect(px, py, TILE, TILE);
+                ctx.fillStyle = P.shadow;
+                ctx.fillRect(px + 6, py + 2, 1, 5);
+                ctx.fillRect(px + 7, py + 7, 1, 5);
+                ctx.fillRect(px + 4, py + 5, 2, 1);
+                ctx.fillRect(px + 8, py + 9, 3, 1);
+                break;
+
+            case TILES.RUBBLE:
+                ctx.fillStyle = P.stone;
+                ctx.fillRect(px, py, TILE, TILE);
+                ctx.fillStyle = P.wall;
+                ctx.fillRect(px + 2, py + 8, 5, 4);
+                ctx.fillRect(px + 8, py + 6, 4, 4);
+                ctx.fillRect(px + 5, py + 11, 5, 2);
+                ctx.fillStyle = P.shadow;
+                ctx.fillRect(px + 3, py + 9, 2, 2);
+                break;
+
             default:
-                // Unknown tile - checkerboard
-                ctx.fillStyle = (tx + ty) % 2 ? '#ff00ff' : '#000000';
+                // Unknown tile — render as plain floor so maps don't break visually
+                ctx.fillStyle = P.stone;
                 ctx.fillRect(px, py, TILE, TILE);
         }
     }

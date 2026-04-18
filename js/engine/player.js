@@ -22,9 +22,11 @@ const Player = (function() {
     
     // Interaction cooldown
     let interactCooldown = 0;
+    let transitionCooldown = 0;  // prevents instant re-trigger on new map
     
     // === SYNC WITH GAME STATE ===
     function syncFromState() {
+        transitionCooldown = 1.0;  // prevent immediate re-transition after area load
         // Get spawn point from current area
         const areaId = (typeof state !== 'undefined' && state.area) ? state.area : 'verath_arch';
         
@@ -57,7 +59,8 @@ const Player = (function() {
     // === UPDATE ===
     function update(dt) {
         // Cooldowns
-        if (interactCooldown > 0) interactCooldown -= dt;
+        if (interactCooldown > 0)  interactCooldown  -= dt;
+        if (transitionCooldown > 0) transitionCooldown -= dt;
         
         // Get input
         const move = Input.getMovementVector();
@@ -74,15 +77,21 @@ const Player = (function() {
         if (isMoving) {
             const newX = x + move.x * MOVE_SPEED * dt;
             const newY = y + move.y * MOVE_SPEED * dt;
-            
-            // Try horizontal movement
+
+            // Try horizontal movement — bump enemy check
             if (canMoveTo(newX, y)) {
                 x = newX;
+            } else if (interactCooldown <= 0) {
+                const bumpedX = getBumpedEnemy(newX, y);
+                if (bumpedX) { handleEntity(bumpedX); interactCooldown = 0.5; }
             }
-            
-            // Try vertical movement
+
+            // Try vertical movement — bump enemy check
             if (canMoveTo(x, newY)) {
                 y = newY;
+            } else if (interactCooldown <= 0) {
+                const bumpedY = getBumpedEnemy(x, newY);
+                if (bumpedY) { handleEntity(bumpedY); interactCooldown = 0.5; }
             }
             
             // Update tile position
@@ -135,7 +144,9 @@ const Player = (function() {
     }
     
     function tryInteract() {
-        // Get tile in front of player
+        if (typeof Tilemap === 'undefined') return;
+
+        // Check tile in front of player first
         let checkX = tx, checkY = ty;
         switch (facing) {
             case 'up':    checkY -= 1; break;
@@ -143,21 +154,17 @@ const Player = (function() {
             case 'left':  checkX -= 1; break;
             case 'right': checkX += 1; break;
         }
-        
-        console.log(`[Player] Interact at (${checkX}, ${checkY})`);
-        
-        // Check for entity at that position
-        if (typeof Tilemap !== 'undefined') {
-            const entity = Tilemap.getEntityAt(checkX, checkY);
+
+        // Search facing tile, then player's own tile (for items on same tile)
+        const candidates = [
+            Tilemap.getEntityAt(checkX, checkY),
+            Tilemap.getEntityAt(tx, ty)
+        ];
+
+        for (const entity of candidates) {
             if (entity) {
                 handleEntity(entity);
                 return;
-            }
-            
-            // Also check current tile (for items)
-            const currentEntity = Tilemap.getEntityAt(tx, ty);
-            if (currentEntity && currentEntity.type === 'item') {
-                handleEntity(currentEntity);
             }
         }
     }
@@ -189,14 +196,31 @@ const Player = (function() {
         }
     }
     
+    // Return an enemy entity that would be walked into at (newX, newY)
+    function getBumpedEnemy(newX, newY) {
+        if (typeof Tilemap === 'undefined') return null;
+        const pad = COLLISION_PADDING;
+        const corners = [
+            { x: newX + pad,        y: newY + pad },
+            { x: newX + TILE - pad, y: newY + pad },
+            { x: newX + pad,        y: newY + TILE - pad },
+            { x: newX + TILE - pad, y: newY + TILE - pad }
+        ];
+        for (const c of corners) {
+            const etx = Math.floor(c.x / TILE);
+            const ety = Math.floor(c.y / TILE);
+            const entity = Tilemap.getEntityAt(etx, ety);
+            if (entity && entity.type === 'enemy') return entity;
+        }
+        return null;
+    }
+
     function checkTransitions() {
-        // Check if standing on a transition tile
-        if (typeof Tilemap !== 'undefined') {
-            const transition = Tilemap.getTransitionAt(tx, ty);
-            if (transition) {
-                console.log('[Player] Transition found:', transition);
-                Engine.triggerAreaChange(transition.target);
-            }
+        if (typeof Tilemap === 'undefined' || transitionCooldown > 0) return;
+        const transition = Tilemap.getTransitionAt(tx, ty);
+        if (transition) {
+            transitionCooldown = 1.0;  // 1s grace period after loading new area
+            Engine.triggerAreaChange(transition.target, transition.spawnX, transition.spawnY);
         }
     }
     
@@ -295,12 +319,13 @@ const Player = (function() {
         getCenterX: () => x + TILE/2,
         getCenterY: () => y + TILE/2,
         
-        // Teleport (for area transitions)
+        // Teleport (for area transitions) — expects tile coordinates
         setPosition: (newTx, newTy) => {
             tx = newTx;
             ty = newTy;
             x = tx * TILE;
             y = ty * TILE;
+            transitionCooldown = 1.0;
         }
     };
 })();

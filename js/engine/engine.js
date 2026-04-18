@@ -251,20 +251,20 @@ const Engine = (function() {
 
     function update(dt) {
         if (currentMode !== 'canvas') return;
-        
-        // Update input
-        if (typeof Input !== 'undefined') {
-            Input.update();
-        }
-        
-        // Update player
+
+        // Update player (reads Input before clearing justPressed)
         if (typeof Player !== 'undefined') {
             Player.update(dt);
         }
-        
+
         // Update camera
         if (typeof Camera !== 'undefined') {
             Camera.update(dt);
+        }
+
+        // Clear per-frame input state AFTER systems have consumed it
+        if (typeof Input !== 'undefined') {
+            Input.update();
         }
     }
 
@@ -363,17 +363,23 @@ const Engine = (function() {
             }
         },
         
-        triggerAreaChange: (areaId) => {
-            console.log('[Engine] Area change:', areaId);
+        triggerAreaChange: (areaId, spawnX, spawnY) => {
+            console.log('[Engine] Area change:', areaId, spawnX, spawnY);
             if (typeof goArea === 'function') {
                 goArea(areaId);
             }
-            // Reload tilemap for new area
             if (typeof Tilemap !== 'undefined') {
                 Tilemap.loadArea(areaId);
             }
             if (typeof Player !== 'undefined') {
-                Player.syncFromState();
+                if (spawnX !== undefined && spawnY !== undefined) {
+                    Player.setPosition(spawnX, spawnY);
+                } else {
+                    Player.syncFromState();
+                }
+            }
+            if (typeof Camera !== 'undefined') {
+                Camera.snapToPlayer();
             }
         }
     };

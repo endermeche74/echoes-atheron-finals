@@ -132,15 +132,15 @@ const Tilemap = (function() {
     
     function isSolid(x, y) {
         const tile = getTile(x, y);
-        
-        // Check if tile itself is solid
+
         if (SOLID_TILES.has(tile)) return true;
-        
-        // Check if blocking entity is there
+
         const entity = getEntityAt(x, y);
-        if (entity && entity.solid) return true;
-        
-        return false;
+        if (!entity) return false;
+        // Enemies block movement (combat is triggered on bump)
+        if (entity.type === 'enemy') return true;
+        // Other entities only block if explicitly marked solid
+        return entity.solid === true;
     }
     
     // === ENTITY MANAGEMENT ===

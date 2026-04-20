@@ -164,13 +164,22 @@
             
             // === Enemies ===
             if (type === 'enemy') {
+                if (id.includes('rat')) {
+                    return 'giant_rat';
+                }
+                if (id.includes('goblin')) {
+                    return 'goblin';
+                }
+                if (id.includes('skeleton')) {
+                    return 'skeleton';
+                }
                 if (id.includes('wolf') || id.includes('dog') || id.includes('lion')) {
                     return 'enemy_wolf';
                 }
                 if (id.includes('bandit') || id.includes('thug') || id.includes('gladiator')) {
                     return 'enemy_bandit';
                 }
-                if (id.includes('undead') || id.includes('skeleton') || id.includes('drowned')) {
+                if (id.includes('undead') || id.includes('drowned')) {
                     return 'enemy_undead';
                 }
                 if (id.includes('spirit') || id.includes('ghost') || id.includes('shade') || id.includes('wisp')) {
@@ -179,7 +188,7 @@
                 if (id.includes('guardian') || id.includes('golem') || id.includes('armor') || id.includes('boss')) {
                     return 'enemy_boss';
                 }
-                return 'enemy_bandit'; // Default enemy
+                return 'enemy_bandit';
             }
             
             // === Items ===

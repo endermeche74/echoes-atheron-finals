@@ -488,9 +488,15 @@ const CombatFull = (function() {
         ctx.lineWidth = 1;
 
         const SPRITE_MAP = {
-            enemy_wolf:   'wolf',   enemy_bandit: 'bandit',
-            enemy_undead: 'undead', enemy_spirit: 'spirit',
-            enemy_boss:   'boss_guardian',
+            enemy_wolf:     'wolf',    enemy_bandit:   'bandit',
+            enemy_undead:   'undead',  enemy_spirit:   'spirit',
+            enemy_boss:     'boss_guardian',
+            giant_rat:      'giant_rat',
+            enemy_rat:      'giant_rat',
+            enemy_skeleton: 'skeleton',
+            skeleton:       'skeleton',
+            enemy_goblin:   'goblin',
+            goblin:         'goblin',
         };
         const spName = SPRITE_MAP[enemy.sprite];
         const eCx = eX + (eW >> 1);

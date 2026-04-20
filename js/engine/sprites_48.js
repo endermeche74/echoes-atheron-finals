@@ -1657,6 +1657,282 @@ const SPRITES_48 = (function() {
         }
     };
 
+    // ─── GIANT RAT ───────────────────────────────────────────
+
+    const giant_rat = {
+        frames: 2,
+        draw(ctx, x, y, frame) {
+            const trot = frame === 1 ? 2 : 0;
+
+            shadow(ctx, x + 24, y + 46, 12, 3);
+
+            // Tail (left side, curling upward)
+            ctx.fillStyle = '#3a2a1a';
+            ctx.fillRect(x + 4, y + 28, 6, 4);
+            ctx.fillRect(x + 2, y + 22, 4, 8);
+            ctx.fillRect(x + 4, y + 18, 3, 5);
+            ctx.fillRect(x + 6, y + 15, 2, 4);
+
+            // Body
+            ctx.fillStyle = '#5a4a3a';
+            ctx.fillRect(x + 8,  y + 26, 28, 14);
+            ctx.fillStyle = '#6a5848';
+            ctx.fillRect(x + 9,  y + 25, 26, 12);
+            ctx.fillStyle = '#4a3a2a'; // belly
+            ctx.fillRect(x + 10, y + 34, 24,  5);
+
+            // Legs (4 stubby)
+            ctx.fillStyle = '#4a3a2a';
+            ctx.fillRect(x + 12, y + 38 + trot, 5, 7);
+            ctx.fillRect(x + 20, y + 38 - trot, 5, 7);
+            ctx.fillRect(x + 28, y + 38 - trot, 5, 7);
+            ctx.fillRect(x + 34, y + 38 + trot, 5, 7);
+            // Paws
+            ctx.fillStyle = '#2a1a0a';
+            ctx.fillRect(x + 11, y + 44 + trot, 7, 2);
+            ctx.fillRect(x + 19, y + 44 - trot, 7, 2);
+            ctx.fillRect(x + 27, y + 44 - trot, 7, 2);
+            ctx.fillRect(x + 33, y + 44 + trot, 7, 2);
+
+            // Neck
+            ctx.fillStyle = '#5a4a3a';
+            ctx.fillRect(x + 30, y + 20, 10, 10);
+
+            // Head
+            ctx.fillStyle = '#4a3a2a';
+            ctx.fillRect(x + 34, y + 14, 12, 12);
+            ctx.fillStyle = '#5a4a3a';
+            ctx.fillRect(x + 35, y + 14, 10, 10);
+
+            // Snout
+            ctx.fillStyle = '#4a3a2a';
+            ctx.fillRect(x + 40, y + 20, 7, 5);
+            ctx.fillStyle = '#1a0e0e';
+            ctx.fillRect(x + 44, y + 20, 3, 3);
+
+            // Whiskers
+            ctx.fillStyle = '#8a7a6a';
+            ctx.fillRect(x + 41, y + 22, 6, 1);
+            ctx.fillRect(x + 41, y + 24, 5, 1);
+
+            // Eyes (red)
+            ctx.fillStyle = '#ff2020';
+            ctx.fillRect(x + 35, y + 15, 4, 3);
+            ctx.fillRect(x + 41, y + 15, 4, 3);
+            ctx.fillStyle = '#ff9090';
+            ctx.fillRect(x + 36, y + 15, 1, 1);
+
+            // Ears
+            ctx.fillStyle = '#4a3a2a';
+            ctx.fillRect(x + 35, y + 10, 5, 6);
+            ctx.fillRect(x + 41, y + 10, 5, 6);
+            ctx.fillStyle = '#7a5a5a';
+            ctx.fillRect(x + 36, y + 11, 3, 4);
+            ctx.fillRect(x + 42, y + 11, 3, 4);
+
+            // Fur texture
+            ctx.fillStyle = '#4a3a2a';
+            ctx.fillRect(x + 12, y + 27, 2, 2);
+            ctx.fillRect(x + 22, y + 26, 2, 2);
+            ctx.fillRect(x + 30, y + 27, 2, 2);
+        }
+    };
+
+    // ─── SKELETON ────────────────────────────────────────────
+
+    const skeleton = {
+        frames: 2,
+        draw(ctx, x, y, frame) {
+            const bob = frame === 1 ? -1 : 0;
+
+            shadow(ctx, x + 24, y + 46, 11, 3);
+
+            const bone   = '#c0b898';
+            const boneSh = '#8a8070';
+            const vd     = '#1a1414'; // void/dark
+
+            // Feet
+            ctx.fillStyle = bone;
+            ctx.fillRect(x + 12, y + 44 + bob, 8, 3);
+            ctx.fillRect(x + 27, y + 44 + bob, 8, 3);
+
+            // Lower legs
+            ctx.fillStyle = bone;
+            ctx.fillRect(x + 14, y + 36 + bob, 5, 9);
+            ctx.fillRect(x + 29, y + 36 + bob, 5, 9);
+            ctx.fillStyle = boneSh;
+            ctx.fillRect(x + 18, y + 36 + bob, 2, 9);
+            ctx.fillRect(x + 33, y + 36 + bob, 2, 9);
+
+            // Upper legs
+            ctx.fillStyle = bone;
+            ctx.fillRect(x + 15, y + 27 + bob, 5, 10);
+            ctx.fillRect(x + 28, y + 27 + bob, 5, 10);
+
+            // Pelvis
+            ctx.fillStyle = bone;
+            ctx.fillRect(x + 14, y + 25 + bob, 20, 6);
+            ctx.fillStyle = boneSh;
+            ctx.fillRect(x + 20, y + 26 + bob, 8,  4);
+
+            // Ribcage
+            ctx.fillStyle = bone;
+            ctx.fillRect(x + 15, y + 12 + bob, 18, 14);
+            ctx.fillStyle = vd;
+            ctx.fillRect(x + 17, y + 13 + bob, 14, 2);
+            ctx.fillRect(x + 17, y + 16 + bob, 14, 2);
+            ctx.fillRect(x + 17, y + 19 + bob, 14, 2);
+            ctx.fillRect(x + 17, y + 22 + bob, 14, 2);
+            // Spine
+            ctx.fillStyle = boneSh;
+            ctx.fillRect(x + 22, y + 12 + bob, 4, 14);
+
+            // Arms
+            ctx.fillStyle = bone;
+            ctx.fillRect(x + 6,  y + 13 + bob, 9, 4);
+            ctx.fillRect(x + 33, y + 13 + bob, 9, 4);
+            ctx.fillRect(x + 8,  y + 17 + bob, 5, 9);
+            ctx.fillRect(x + 35, y + 17 + bob, 5, 9);
+            // Claws
+            ctx.fillStyle = boneSh;
+            ctx.fillRect(x + 5,  y + 25 + bob, 5, 6);
+            ctx.fillRect(x + 38, y + 25 + bob, 5, 6);
+
+            // Skull
+            ctx.fillStyle = bone;
+            ctx.fillRect(x + 16, y + 1 + bob, 16, 13);
+            ctx.fillStyle = boneSh;
+            ctx.fillRect(x + 17, y + 1 + bob, 14, 5);
+            // Cheekbones
+            ctx.fillStyle = bone;
+            ctx.fillRect(x + 14, y + 7 + bob, 4, 5);
+            ctx.fillRect(x + 30, y + 7 + bob, 4, 5);
+            // Eye sockets
+            ctx.fillStyle = vd;
+            ctx.fillRect(x + 17, y + 4 + bob, 5, 5);
+            ctx.fillRect(x + 26, y + 4 + bob, 5, 5);
+            // Blue soul-glow
+            ctx.fillStyle = '#3050ff';
+            ctx.fillRect(x + 19, y + 5 + bob, 2, 3);
+            ctx.fillRect(x + 28, y + 5 + bob, 2, 3);
+            // Nose cavity
+            ctx.fillStyle = vd;
+            ctx.fillRect(x + 22, y + 8 + bob, 4, 3);
+            // Jaw
+            ctx.fillStyle = bone;
+            ctx.fillRect(x + 16, y + 10 + bob, 16, 5);
+            ctx.fillStyle = vd;
+            ctx.fillRect(x + 17, y + 12 + bob, 3, 3);
+            ctx.fillRect(x + 21, y + 12 + bob, 3, 3);
+            ctx.fillRect(x + 25, y + 12 + bob, 3, 3);
+            ctx.fillRect(x + 29, y + 12 + bob, 3, 3);
+        }
+    };
+
+    // ─── GOBLIN ──────────────────────────────────────────────
+
+    const goblin = {
+        frames: 2,
+        draw(ctx, x, y, frame) {
+            const bob = frame === 1 ? -1 : 0;
+
+            shadow(ctx, x + 24, y + 46, 10, 3);
+
+            const skin   = '#4a7a38';
+            const skinSh = '#3a6028';
+            const cloth  = '#5a4020';
+
+            // Feet
+            ctx.fillStyle = skinSh;
+            ctx.fillRect(x + 16, y + 42 + bob, 6, 4);
+            ctx.fillRect(x + 26, y + 42 + bob, 6, 4);
+
+            // Legs
+            ctx.fillStyle = skin;
+            ctx.fillRect(x + 17, y + 33 + bob, 5, 10);
+            ctx.fillRect(x + 26, y + 33 + bob, 5, 10);
+
+            // Loincloth
+            ctx.fillStyle = cloth;
+            ctx.fillRect(x + 15, y + 30 + bob, 18, 7);
+            ctx.fillStyle = '#4a3010';
+            ctx.fillRect(x + 15, y + 30 + bob, 18, 2);
+
+            // Body
+            ctx.fillStyle = skin;
+            ctx.fillRect(x + 14, y + 18 + bob, 20, 14);
+            ctx.fillStyle = '#5a7848'; // leather vest
+            ctx.fillRect(x + 15, y + 19 + bob, 18,  9);
+            ctx.fillStyle = '#7a5830'; // strap highlight
+            ctx.fillRect(x + 16, y + 20 + bob, 16,  2);
+
+            // Arms
+            ctx.fillStyle = skin;
+            ctx.fillRect(x + 7,  y + 20 + bob, 7, 12);
+            ctx.fillRect(x + 34, y + 20 + bob, 7, 12);
+            ctx.fillStyle = skinSh;
+            ctx.fillRect(x + 6,  y + 31 + bob, 6,  5);
+            ctx.fillRect(x + 36, y + 31 + bob, 6,  5);
+            // Claws
+            ctx.fillStyle = '#1a1a0a';
+            ctx.fillRect(x + 5,  y + 35 + bob, 2, 3);
+            ctx.fillRect(x + 9,  y + 35 + bob, 2, 3);
+            ctx.fillRect(x + 36, y + 35 + bob, 2, 3);
+            ctx.fillRect(x + 40, y + 35 + bob, 2, 3);
+
+            // Club (right hand)
+            ctx.fillStyle = '#5a3818';
+            ctx.fillRect(x + 40, y + 14 + bob, 5, 20);
+            ctx.fillStyle = '#6a4820';
+            ctx.fillRect(x + 39, y + 12 + bob, 7,  8);
+
+            // Neck
+            ctx.fillStyle = skin;
+            ctx.fillRect(x + 20, y + 14 + bob, 8, 6);
+
+            // Head (large)
+            ctx.fillStyle = skin;
+            ctx.fillRect(x + 14, y + 2 + bob, 20, 14);
+            ctx.fillStyle = skinSh;
+            ctx.fillRect(x + 15, y + 3 + bob, 18,  5);
+
+            // Big pointy ears
+            ctx.fillStyle = skin;
+            ctx.fillRect(x + 6,  y + 4 + bob, 8, 6);
+            ctx.fillRect(x + 34, y + 4 + bob, 8, 6);
+            ctx.fillStyle = skinSh;
+            ctx.fillRect(x + 8,  y + 4 + bob, 5, 4);
+            ctx.fillRect(x + 36, y + 4 + bob, 5, 4);
+
+            // Eyes (yellow)
+            ctx.fillStyle = '#e8d020';
+            ctx.fillRect(x + 16, y + 5 + bob, 6, 5);
+            ctx.fillRect(x + 26, y + 5 + bob, 6, 5);
+            ctx.fillStyle = '#1a1400'; // pupils
+            ctx.fillRect(x + 18, y + 6 + bob, 3, 3);
+            ctx.fillRect(x + 28, y + 6 + bob, 3, 3);
+            ctx.fillStyle = '#ffff80'; // gleam
+            ctx.fillRect(x + 16, y + 5 + bob, 2, 2);
+            ctx.fillRect(x + 26, y + 5 + bob, 2, 2);
+
+            // Bulbous nose
+            ctx.fillStyle = skinSh;
+            ctx.fillRect(x + 20, y + 9 + bob, 8, 5);
+            ctx.fillStyle = '#2a1a0a';
+            ctx.fillRect(x + 21, y + 11 + bob, 2, 2);
+            ctx.fillRect(x + 25, y + 11 + bob, 2, 2);
+
+            // Grinning mouth
+            ctx.fillStyle = '#1a0e0a';
+            ctx.fillRect(x + 18, y + 13 + bob, 12, 3);
+            ctx.fillStyle = '#e0d8c0';
+            ctx.fillRect(x + 19, y + 13 + bob, 2, 2);
+            ctx.fillRect(x + 22, y + 13 + bob, 2, 2);
+            ctx.fillRect(x + 25, y + 13 + bob, 2, 2);
+            ctx.fillRect(x + 28, y + 13 + bob, 2, 2);
+        }
+    };
+
     // ─── PUBLIC API ──────────────────────────────────────────
 
     const lib = {
@@ -1669,6 +1945,9 @@ const SPRITES_48 = (function() {
         undead,
         spirit,
         boss_guardian,
+        giant_rat,
+        skeleton,
+        goblin,
         merchant,
         guard,
         elder,

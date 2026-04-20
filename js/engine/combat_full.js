@@ -86,7 +86,8 @@ const CombatFull = (function() {
             def:   enemyData.def    || 5,
             xp:    enemyData.xp     || 30,
             gold:  enemyData.gold   || 15,
-            parts: BODY_PARTS.map(p => ({ ...p, hp: p.maxHp })),
+            parts:  BODY_PARTS.map(p => ({ ...p, hp: p.maxHp })),
+            sprite: enemyData.sprite || '',
         };
 
         active    = true;
@@ -456,21 +457,28 @@ const CombatFull = (function() {
     }
 
     function _rCombatants() {
-        // Player silhouette (left)
+        // ── PLAYER (left, back view) ──────────────────────────
         const pX = 38, pY = 88, pW = 66, pH = 90;
         ctx.fillStyle = '#1c1628';
         ctx.fillRect(pX, pY, pW, pH);
         ctx.strokeStyle = '#5a4878';
         ctx.lineWidth = 1;
         ctx.strokeRect(pX, pY, pW, pH);
-        ctx.fillStyle = '#7a6a90';
-        ctx.font = '8px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('YOU', pX + pW/2, pY + pH/2 + 3);
+
+        if (typeof SPRITES_48 !== 'undefined' && SPRITES_48.has('player_down')) {
+            const sc = 1.3;
+            ctx.save();
+            ctx.translate(pX + ((pW - 48 * sc) / 2 | 0), pY + 4);
+            ctx.scale(sc, sc);
+            SPRITES_48.draw('player_down', ctx, 0, 0, 0);
+            ctx.restore();
+        } else {
+            _drawPlayerSprite(ctx, pX + (pW >> 1), pY + pH - 2);
+        }
 
         if (!enemy) return;
 
-        // Enemy sprite (right)
+        // ── ENEMY (right) ─────────────────────────────────────
         const eX = 355, eY = 18, eW = 200, eH = 162;
         ctx.fillStyle = '#140e1e';
         ctx.fillRect(eX, eY, eW, eH);
@@ -479,23 +487,45 @@ const CombatFull = (function() {
         ctx.strokeRect(eX, eY, eW, eH);
         ctx.lineWidth = 1;
 
-        ctx.fillStyle = '#c08090';
-        ctx.font = 'bold 12px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(enemy.name.toUpperCase(), eX + eW/2, eY + eH/2 - 4);
+        const SPRITE_MAP = {
+            enemy_wolf:   'wolf',   enemy_bandit: 'bandit',
+            enemy_undead: 'undead', enemy_spirit: 'spirit',
+            enemy_boss:   'boss_guardian',
+        };
+        const spName = SPRITE_MAP[enemy.sprite];
+        const eCx = eX + (eW >> 1);
+        const eCy = eY + (eH >> 1);
 
-        // Part HP dots along the enemy base
+        if (spName && typeof SPRITES_48 !== 'undefined' && SPRITES_48.has(spName)) {
+            const sc = 3;
+            ctx.save();
+            ctx.translate(eX + ((eW - 48 * sc) / 2 | 0), eY + ((eH - 48 * sc) / 2 | 0));
+            ctx.scale(sc, sc);
+            SPRITES_48.draw(spName, ctx, 0, 0, 0);
+            ctx.restore();
+        } else {
+            const eName = (enemy.name || '').toLowerCase();
+            if      (eName.includes('rat'))                                       _drawRat(ctx, eCx, eCy);
+            else if (eName.includes('wolf'))                                      _drawWolf(ctx, eCx, eCy);
+            else if (eName.includes('bandit') || eName.includes('gladiator'))     _drawBandit(ctx, eCx, eCy);
+            else if (eName.includes('shade') || eName.includes('spirit') || eName.includes('sprite')) _drawSpirit(ctx, eCx, eCy);
+            else                                                                  _drawDefaultEnemy(ctx, eCx, eCy);
+        }
+
+        // Body part HP indicators
         if (analyzed || activeTab === 0) {
+            ctx.textAlign = 'center';
             enemy.parts.forEach((p, i) => {
                 const ratio = p.hp / p.maxHp;
                 ctx.fillStyle = ratio > 0.6 ? '#60c060' : ratio > 0.3 ? '#c0a030' : ratio > 0 ? '#c03030' : '#333';
                 ctx.font = '7px monospace';
-                ctx.fillText(p.label.slice(0,4), eX + 8 + i * 38, eY + eH - 6);
+                ctx.fillText(p.label.slice(0, 4), eX + 8 + i * 38, eY + eH - 6);
             });
+            ctx.textAlign = 'left';
         }
 
         // Targeting highlight on active tab 0
-        if (activeTab === 0 && phase === 'menu' && enemy) {
+        if (activeTab === 0 && phase === 'menu') {
             const bx = eX + 6 + selIndex * 38;
             const by = eY + eH - 18;
             ctx.strokeStyle = '#ffd700';
@@ -503,8 +533,226 @@ const CombatFull = (function() {
             ctx.strokeRect(bx, by, 34, 12);
         }
 
-        ctx.textAlign = 'left';
         ctx.lineWidth = 1;
+    }
+
+    // ── SPRITE HELPERS ────────────────────────────────────────────
+
+    function _drawPlayerSprite(ctx, cx, bot) {
+        // Back-view player. bot = y of feet.
+        ctx.fillStyle = '#2a1a0e';
+        ctx.fillRect(cx - 18, bot - 10, 14, 10);   // left boot
+        ctx.fillRect(cx + 4,  bot - 10, 14, 10);   // right boot
+        ctx.fillStyle = '#1e1a14';
+        ctx.fillRect(cx - 15, bot - 28, 12, 18);   // left leg
+        ctx.fillRect(cx + 3,  bot - 28, 12, 18);   // right leg
+        ctx.fillStyle = '#4a3018';
+        ctx.fillRect(cx - 20, bot - 36, 40, 8);    // belt
+        ctx.fillStyle = '#c0a040';
+        ctx.fillRect(cx - 4,  bot - 36, 8, 8);     // buckle
+        ctx.fillStyle = '#3a5a3a';
+        ctx.fillRect(cx - 20, bot - 62, 40, 26);   // tunic body
+        ctx.fillStyle = '#2a4a2a';
+        ctx.fillRect(cx - 24, bot - 66, 48, 10);   // shoulders
+        ctx.fillStyle = '#3a5a3a';
+        ctx.fillRect(cx - 30, bot - 62, 10, 24);   // left arm
+        ctx.fillRect(cx + 20, bot - 62, 10, 24);   // right arm
+        ctx.fillStyle = '#4a3a2a';
+        ctx.fillRect(cx - 14, bot - 84, 28, 24);   // head/hair
+        ctx.fillStyle = '#808090';
+        ctx.fillRect(cx + 22, bot - 82, 4, 46);    // sword blade
+        ctx.fillStyle = '#604020';
+        ctx.fillRect(cx + 20, bot - 40, 8, 10);    // sword guard
+    }
+
+    function _drawRat(ctx, cx, cy) {
+        // Body
+        ctx.fillStyle = '#5a4a3a';
+        ctx.beginPath(); ctx.ellipse(cx, cy, 58, 34, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#6a5848';
+        ctx.beginPath(); ctx.ellipse(cx + 8, cy - 6, 44, 24, 0, 0, Math.PI * 2); ctx.fill();
+        // Head
+        ctx.fillStyle = '#4a3a2a';
+        ctx.beginPath(); ctx.ellipse(cx - 52, cy - 4, 26, 22, -0.2, 0, Math.PI * 2); ctx.fill();
+        // Snout
+        ctx.fillStyle = '#6a5848';
+        ctx.beginPath(); ctx.ellipse(cx - 74, cy, 12, 9, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#2a1818';
+        ctx.fillRect(cx - 84, cy - 4, 8, 8);
+        // Eyes
+        ctx.fillStyle = '#ff2020';
+        ctx.fillRect(cx - 66, cy - 16, 8, 8);
+        ctx.fillStyle = '#ff8080';
+        ctx.fillRect(cx - 64, cy - 14, 3, 3);
+        // Ears
+        ctx.fillStyle = '#4a3a2a';
+        ctx.beginPath(); ctx.ellipse(cx - 38, cy - 32, 12, 18, -0.4, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(cx - 22, cy - 34, 12, 18,  0.2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#7a5a5a';
+        ctx.beginPath(); ctx.ellipse(cx - 38, cy - 32, 7, 12, -0.4, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(cx - 22, cy - 34, 7, 12,  0.2, 0, Math.PI * 2); ctx.fill();
+        // Teeth
+        ctx.fillStyle = '#e8e0c8';
+        ctx.fillRect(cx - 80, cy + 4, 6, 10);
+        ctx.fillRect(cx - 72, cy + 4, 6, 10);
+        // Tail
+        ctx.strokeStyle = '#3a2a1a'; ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(cx + 54, cy + 4);
+        ctx.quadraticCurveTo(cx + 80, cy - 22, cx + 88, cy + 14);
+        ctx.stroke();
+        ctx.lineWidth = 1;
+        // Legs
+        ctx.fillStyle = '#3a2a1a';
+        ctx.fillRect(cx - 28, cy + 30, 12, 18);
+        ctx.fillRect(cx - 8,  cy + 32, 12, 18);
+        ctx.fillRect(cx + 10, cy + 32, 12, 18);
+        ctx.fillRect(cx + 26, cy + 28, 12, 16);
+    }
+
+    function _drawWolf(ctx, cx, cy) {
+        // Body
+        ctx.fillStyle = '#484848';
+        ctx.beginPath(); ctx.ellipse(cx, cy, 64, 40, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#606060';
+        ctx.beginPath(); ctx.ellipse(cx + 6, cy - 6, 48, 28, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#787878';
+        ctx.beginPath(); ctx.ellipse(cx - 6, cy - 2, 26, 18, 0, 0, Math.PI * 2); ctx.fill();
+        // Head
+        ctx.fillStyle = '#484848';
+        ctx.beginPath(); ctx.ellipse(cx - 56, cy - 12, 30, 26, -0.15, 0, Math.PI * 2); ctx.fill();
+        // Snout
+        ctx.fillStyle = '#585858';
+        ctx.beginPath(); ctx.ellipse(cx - 82, cy - 6, 18, 14, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#181818';
+        ctx.fillRect(cx - 98, cy - 10, 10, 10);
+        // Eyes
+        ctx.fillStyle = '#ffcc00';
+        ctx.fillRect(cx - 72, cy - 22, 10, 8);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(cx - 70, cy - 21, 4, 6);
+        // Ears
+        ctx.fillStyle = '#383838';
+        ctx.beginPath();
+        ctx.moveTo(cx - 40, cy - 36); ctx.lineTo(cx - 52, cy - 64); ctx.lineTo(cx - 66, cy - 36);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(cx - 22, cy - 38); ctx.lineTo(cx - 30, cy - 66); ctx.lineTo(cx - 46, cy - 38);
+        ctx.fill();
+        // Mouth / teeth
+        ctx.fillStyle = '#200808';
+        ctx.fillRect(cx - 96, cy - 2, 22, 10);
+        ctx.fillStyle = '#e8e8e8';
+        ctx.fillRect(cx - 92, cy, 5, 8);
+        ctx.fillRect(cx - 84, cy, 5, 8);
+        ctx.fillRect(cx - 77, cy + 1, 4, 7);
+        // Legs
+        ctx.fillStyle = '#383838';
+        ctx.fillRect(cx - 30, cy + 36, 14, 26);
+        ctx.fillRect(cx - 6,  cy + 38, 14, 26);
+        ctx.fillRect(cx + 18, cy + 36, 14, 26);
+        ctx.fillRect(cx + 40, cy + 34, 14, 22);
+        // Tail
+        ctx.strokeStyle = '#505050'; ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.moveTo(cx + 58, cy - 4);
+        ctx.quadraticCurveTo(cx + 86, cy - 36, cx + 94, cy - 10);
+        ctx.stroke();
+        ctx.lineWidth = 1;
+    }
+
+    function _drawBandit(ctx, cx, cy) {
+        // Legs
+        ctx.fillStyle = '#252330';
+        ctx.fillRect(cx - 20, cy + 18, 16, 34);
+        ctx.fillRect(cx + 4,  cy + 18, 16, 34);
+        // Boots
+        ctx.fillStyle = '#181210';
+        ctx.fillRect(cx - 22, cy + 44, 20, 12);
+        ctx.fillRect(cx + 2,  cy + 44, 20, 12);
+        // Body / armor
+        ctx.fillStyle = '#3a2820';
+        ctx.fillRect(cx - 26, cy - 32, 52, 50);
+        ctx.fillStyle = '#4a3428';
+        ctx.fillRect(cx - 24, cy - 30, 48, 46);
+        // Belt
+        ctx.fillStyle = '#5a3a18';
+        ctx.fillRect(cx - 26, cy + 16, 52, 8);
+        ctx.fillStyle = '#c0a030';
+        ctx.fillRect(cx - 4,  cy + 16, 8, 8);
+        // Arms
+        ctx.fillStyle = '#3a2820';
+        ctx.fillRect(cx - 40, cy - 28, 14, 40);
+        ctx.fillRect(cx + 26, cy - 28, 14, 40);
+        // Weapon
+        ctx.fillStyle = '#808898';
+        ctx.fillRect(cx + 36, cy - 52, 5, 58);
+        ctx.fillStyle = '#8a7030';
+        ctx.fillRect(cx + 30, cy + 2,  18, 8);
+        ctx.fillStyle = '#5a3818';
+        ctx.fillRect(cx + 37, cy + 8,  4, 12);
+        // Head
+        ctx.fillStyle = '#8a6a50';
+        ctx.fillRect(cx - 18, cy - 62, 36, 32);
+        // Hood
+        ctx.fillStyle = '#242028';
+        ctx.fillRect(cx - 20, cy - 68, 40, 22);
+        ctx.fillRect(cx - 14, cy - 78, 28, 14);
+        // Eyes
+        ctx.fillStyle = '#cc2020';
+        ctx.fillRect(cx - 10, cy - 54, 8, 7);
+        ctx.fillRect(cx + 2,  cy - 54, 8, 7);
+    }
+
+    function _drawSpirit(ctx, cx, cy) {
+        const t   = performance.now() / 800;
+        const bob = Math.sin(t) * 5 | 0;
+        const by  = cy + bob;
+        // Outer glow
+        ctx.fillStyle = 'rgba(80,140,255,0.10)';
+        ctx.beginPath(); ctx.ellipse(cx, by, 58, 64, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(100,160,255,0.18)';
+        ctx.beginPath(); ctx.ellipse(cx, by, 42, 50, 0, 0, Math.PI * 2); ctx.fill();
+        // Body
+        ctx.fillStyle = 'rgba(130,190,255,0.72)';
+        ctx.beginPath(); ctx.ellipse(cx, by, 28, 40, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(200,230,255,0.5)';
+        ctx.beginPath(); ctx.ellipse(cx - 6, by - 10, 14, 18, 0, 0, Math.PI * 2); ctx.fill();
+        // Face
+        ctx.fillStyle = 'rgba(10,10,50,0.92)';
+        ctx.fillRect(cx - 14, by - 14, 10, 9);
+        ctx.fillRect(cx + 4,  by - 14, 10, 9);
+        ctx.fillRect(cx - 8,  by + 4,  16, 7);
+        // Tendrils
+        ctx.strokeStyle = 'rgba(150,210,255,0.55)'; ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(cx - 22, by + 38);
+        ctx.quadraticCurveTo(cx - 36, by + 54, cx - 22, by + 68);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx, by + 40);
+        ctx.quadraticCurveTo(cx + 6, by + 60, cx - 2, by + 72);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx + 22, by + 38);
+        ctx.quadraticCurveTo(cx + 36, by + 52, cx + 24, by + 66);
+        ctx.stroke();
+        ctx.lineWidth = 1;
+    }
+
+    function _drawDefaultEnemy(ctx, cx, cy) {
+        ctx.fillStyle = '#604848';
+        ctx.fillRect(cx - 28, cy - 50, 56, 70);
+        ctx.fillStyle = '#705858';
+        ctx.fillRect(cx - 22, cy - 46, 44, 62);
+        ctx.fillStyle = '#504038';
+        ctx.fillRect(cx - 22, cy - 68, 44, 22);
+        ctx.fillStyle = '#ff3838';
+        ctx.fillRect(cx - 10, cy - 60, 8, 7);
+        ctx.fillRect(cx + 2,  cy - 60, 8, 7);
+        ctx.fillStyle = '#402820';
+        ctx.fillRect(cx - 18, cy + 20, 14, 26);
+        ctx.fillRect(cx + 4,  cy + 20, 14, 26);
     }
 
     function _rHUD() {

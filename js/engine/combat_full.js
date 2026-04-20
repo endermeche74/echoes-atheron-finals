@@ -73,38 +73,8 @@ const CombatFull = (function() {
     let shakeX = 0, shakeY = 0;
     let floaters   = [];    // { text, x, y, vy, alpha, color, timer }
 
-    // ── OVERLAY CANVAS ────────────────────────────────────────
-    let canvas = null;
-    let ctx    = null;
-
-    function _createOverlay() {
-        if (canvas) return;
-        const container = document.getElementById('canvas-container');
-        if (!container) return;
-        canvas = document.createElement('canvas');
-        canvas.id     = 'combat-full-canvas';
-        canvas.width  = W;
-        canvas.height = H;
-        canvas.style.cssText = `
-            position:absolute;top:0;left:0;
-            width:100%;height:100%;
-            pointer-events:none;
-            image-rendering:pixelated;
-            z-index:15;
-        `;
-        container.appendChild(canvas);
-        ctx = canvas.getContext('2d');
-        ctx.imageSmoothingEnabled = false;
-
-        let lastT = performance.now();
-        (function loop(now) {
-            const dt = Math.min((now - lastT) / 1000, 0.1);
-            lastT = now;
-            _update(dt);
-            _render();
-            requestAnimationFrame(loop);
-        })(lastT);
-    }
+    // ctx is set by the public render(c) call from engine.js
+    let ctx = null;
 
     // ── PUBLIC API ────────────────────────────────────────────
     function start(enemyData) {
@@ -145,7 +115,7 @@ const CombatFull = (function() {
     }
 
     // ── UPDATE ────────────────────────────────────────────────
-    function _update(dt) {
+    function update(dt) {
         if (!active) return;
 
         // Shake
@@ -443,6 +413,9 @@ const CombatFull = (function() {
     }
 
     // ── RENDER ────────────────────────────────────────────────
+    // Public entry point — engine.js passes its canvas ctx
+    function render(c) { ctx = c; _render(); }
+
     function _render() {
         ctx.clearRect(0, 0, W, H);
         if (!active) return;
@@ -989,22 +962,7 @@ const CombatFull = (function() {
         }
     }
 
-    // ── INIT ──────────────────────────────────────────────────
-    function init() {
-        const c = document.getElementById('canvas-container');
-        if (c) { _createOverlay(); return; }
-        let n = 0;
-        const t = setInterval(() => {
-            if (document.getElementById('canvas-container') || ++n > 40) {
-                clearInterval(t); _createOverlay();
-            }
-        }, 100);
-    }
-
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-    else init();
-
-    return { start, close, isActive: () => active };
+    return { start, close, update, render, isActive: () => active };
 
 })();
 

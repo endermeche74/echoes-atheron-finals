@@ -14,14 +14,15 @@
       justify-content: center;
       overflow: hidden;
     }
-    #canvas-container {
-      image-rendering: pixelated;
-    }
+    #canvas-container { image-rendering: pixelated; }
   </style>
 </head>
 <body>
 
-<!-- DATA — order matters -->
+<!-- CONFIG — must be first, everything depends on it -->
+<script src="js/engine/config.js"></script>
+
+<!-- DATA -->
 <script src="js/data/abilities.js"></script>
 <script src="js/data/spells.js"></script>
 <script src="js/data/items.js"></script>
@@ -38,56 +39,58 @@
 <script src="js/data/maps_phase4.js"></script>
 <script src="js/data/maps_phase5.js"></script>
 
-<!-- ENGINE — order matters -->
-<script src="js/engine/config.js"></script>
+<!-- ENGINE CORE (depend on config + data) -->
 <script src="js/engine/sprite_scaler.js"></script>
 <script src="js/engine/sprites_48.js"></script>
 <script src="js/engine/input.js"></script>
 <script src="js/engine/camera.js"></script>
 <script src="js/engine/tilemap.js"></script>
 <script src="js/engine/player.js"></script>
-<script src="js/engine/engine.js"></script>
 
+<!-- SPRITES -->
 <script src="js/engine/sprites.js"></script>
 <script src="js/engine/spritedata.js"></script>
 <script src="js/engine/sprite_integration.js"></script>
 
-<!-- Effects & particles -->
+<!-- EFFECTS & PARTICLES -->
 <script src="js/engine/effects.js"></script>
 <script src="js/engine/particles.js"></script>
 <script src="js/engine/damage_numbers.js"></script>
 <script src="js/engine/effects_integration.js"></script>
 <script src="js/engine/engine_effects_patch.js"></script>
 
-<!-- Lighting -->
+<!-- LIGHTING -->
 <script src="js/engine/lighting.js"></script>
 <script src="js/engine/lighting_integration.js"></script>
 <script src="js/engine/keyboard_layouts.js"></script>
 
-<!-- Combat (legacy base, patched over by combat_enhanced below) -->
+<!-- LEGACY COMBAT BASE (patched over by combat_full below) -->
 <script src="js/engine/combat_canvas.js"></script>
 <script src="js/engine/combat_canvas_integration.js"></script>
 
-<!-- HD UI + Combat + Inventory overlays (load last so triggerCombat → HD system) -->
+<!-- HD UI -->
 <script src="js/engine/ui_hd.js"></script>
+
+<!-- OVERLAY SYSTEMS (dialogue · inventory · combat — loaded before engine.js so they exist at init time) -->
 <script src="js/engine/dialogue_canvas.js"></script>
+<script src="js/engine/inventory_canvas.js"></script>
 <script src="js/engine/combat_full.js"></script>
 <script src="js/engine/combat_enhanced.js"></script>
-<script src="js/engine/inventory_canvas.js"></script>
 
-<!-- Audio -->
+<!-- AUDIO -->
 <script src="js/engine/audio.js"></script>
 <script src="js/engine/audio_integration.js"></script>
 
+<!-- DEBUG -->
 <script src="js/engine/debug_mode.js"></script>
 
-<!-- Polish -->
+<!-- POLISH -->
 <script src="js/engine/minimap.js"></script>
 <script src="js/engine/cutscene.js"></script>
 <script src="js/engine/ui_polish.js"></script>
 <script src="js/engine/polish_integration.js"></script>
 
-<!-- SYSTEMS -->
+<!-- GAME SYSTEMS -->
 <script src="js/audio.js"></script>
 <script src="js/systems/state.js"></script>
 <script src="js/systems/time.js"></script>
@@ -99,6 +102,9 @@
 <script src="js/systems/movements.js"></script>
 <script src="js/systems/quests.js"></script>
 <script src="js/systems/save.js"></script>
+
+<!-- ENGINE (last — inits after all systems are defined) -->
+<script src="js/engine/engine.js"></script>
 
 <!-- ENTRY -->
 <script src="main.js"></script>

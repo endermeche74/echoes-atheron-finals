@@ -501,5 +501,20 @@ const InventoryCanvas = (function() {
         init();
     }
 
-    return { toggle, close, isOpen: () => open };
+    function addItem(itemOrId) {
+        const inv = typeof P !== 'undefined' ? (P.inv || P.items) : null;
+        if (!inv) return;
+        if (typeof itemOrId === 'string') {
+            inv.push({ id: itemOrId, name: itemOrId, qty: 1, type: 'misc' });
+        } else {
+            const existing = inv.find(i => i.id === itemOrId.id);
+            if (existing) { existing.qty = (existing.qty || 1) + (itemOrId.qty || 1); }
+            else inv.push({ ...itemOrId });
+        }
+        console.log('[InventoryCanvas] Item added:', typeof itemOrId === 'string' ? itemOrId : itemOrId.id);
+    }
+
+    function update(_dt) { /* state managed by own RAF loop */ }
+
+    return { toggle, close, addItem, update, isOpen: () => open, isActive: () => open };
 })();

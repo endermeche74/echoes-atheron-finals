@@ -197,15 +197,19 @@ const Player = (function() {
                 break;
             }
 
-            case 'item':
-                if (typeof P !== 'undefined') {
+            case 'item': {
+                const itemData = { id: entity.id, qty: 1, name: entity.name || entity.id, type: entity.itemType || 'misc', desc: entity.desc || '' };
+                if (typeof InventoryCanvas !== 'undefined') {
+                    InventoryCanvas.addItem(itemData);
+                } else if (typeof P !== 'undefined') {
                     const inv = P.inv || P.items;
-                    if (inv) inv.push({ id: entity.id, qty: 1, name: entity.name || entity.id, type: 'misc' });
+                    if (inv) inv.push(itemData);
                 } else if (typeof pickupItem === 'function') {
                     pickupItem(entity.id);
                 }
                 Tilemap.removeEntity(entity);
                 break;
+            }
 
             case 'exit':
                 Engine.triggerAreaChange(entity.target);

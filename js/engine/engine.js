@@ -125,11 +125,26 @@ const Engine = (function() {
 
     // === UPDATE ===
     function update(dt) {
-        if (typeof Player          !== 'undefined') Player.update(dt);
-        if (typeof Camera          !== 'undefined') Camera.update(dt);
-        if (typeof DialogueCanvas  !== 'undefined') DialogueCanvas.update(dt);
-        // Flush justPressed AFTER all systems have read it this frame
-        if (typeof Input           !== 'undefined') Input.update();
+        // Overlay systems pause normal gameplay — highest priority first
+        if (typeof CombatFull !== 'undefined' && CombatFull.isActive()) {
+            CombatFull.update(dt);
+            if (typeof Input !== 'undefined') Input.update();
+            return;
+        }
+        if (typeof DialogueCanvas !== 'undefined' && DialogueCanvas.isActive()) {
+            DialogueCanvas.update(dt);
+            if (typeof Input !== 'undefined') Input.update();
+            return;
+        }
+        if (typeof InventoryCanvas !== 'undefined' && InventoryCanvas.isActive()) {
+            if (typeof Input !== 'undefined') Input.update();
+            return;
+        }
+
+        // Normal gameplay
+        if (typeof Player  !== 'undefined') Player.update(dt);
+        if (typeof Camera  !== 'undefined') Camera.update(dt);
+        if (typeof Input   !== 'undefined') Input.update();
     }
 
     // === RENDER ===
@@ -167,10 +182,14 @@ const Engine = (function() {
         renderUI();
 
         // ── Screen overlay effects (flash, vignette, fade, wipe) ─
-        if (typeof Effects         !== 'undefined') Effects.render(ctx, CANVAS_WIDTH, CANVAS_HEIGHT);
+        if (typeof Effects !== 'undefined') Effects.render(ctx, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-        // ── Dialogue overlay ──────────────────────────────────
-        if (typeof DialogueCanvas  !== 'undefined') DialogueCanvas.render(ctx);
+        // ── Canvas overlays (drawn on top of everything) ──────
+        if (typeof DialogueCanvas !== 'undefined' && DialogueCanvas.isActive())
+            DialogueCanvas.render(ctx);
+        if (typeof CombatFull !== 'undefined' && CombatFull.isActive())
+            CombatFull.render(ctx);
+        // InventoryCanvas is self-rendering on its own overlay canvas (z-index 16)
     }
 
     // === HUD ===

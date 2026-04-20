@@ -340,7 +340,9 @@ const DialogueCanvas = (function() {
         charTimer = 0;
 
         if (typeof Input !== 'undefined') Input.disable();
-        console.log('[Dialogue] Started with', npcId);
+        console.log('[Dialogue] Looking for NPC:', npcId);
+        console.log('[Dialogue] Available:', Object.keys(DIALOGUES));
+        if (!DIALOGUES[npcId]) console.warn('[Dialogue] No dialogue found for:', npcId, '— using default');
     }
 
     function advance() {

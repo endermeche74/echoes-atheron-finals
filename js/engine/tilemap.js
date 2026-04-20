@@ -50,6 +50,34 @@ const Tilemap = (function() {
     let tileData = [];
     let entities = [];
     let transitions = [];
+
+    // === ENTITY PERSISTENCE ===
+    const removedEntities = {}; // { areaId: Set(['x_y_id']) }
+
+    function entityKey(e) {
+        return `${e.x}_${e.y}_${e.id || e.type}`;
+    }
+
+    function saveRemovedEntities() {
+        const data = {};
+        for (const area in removedEntities) {
+            data[area] = Array.from(removedEntities[area]);
+        }
+        try { localStorage.setItem('echoes_removed_entities', JSON.stringify(data)); } catch(e) {}
+    }
+
+    function loadRemovedEntities() {
+        try {
+            const data = JSON.parse(localStorage.getItem('echoes_removed_entities'));
+            if (data) {
+                for (const area in data) {
+                    removedEntities[area] = new Set(data[area]);
+                }
+            }
+        } catch(e) {}
+    }
+
+    loadRemovedEntities();
     
     // === LOAD MAP ===
     function loadArea(areaId) {
@@ -75,14 +103,19 @@ const Tilemap = (function() {
         tileData = map.tiles.slice();  // Copy array
         entities = (map.entities || []).map(e => ({...e}));  // Deep copy
         transitions = map.transitions || [];
-        
+
+        // Filter out previously removed entities
+        if (removedEntities[areaId] && removedEntities[areaId].size > 0) {
+            entities = entities.filter(e => !removedEntities[areaId].has(entityKey(e)));
+        }
+
         // Update camera bounds and snap to player's current position
         if (typeof Camera !== 'undefined') {
             Camera.setMapBounds(mapWidth * TILE, mapHeight * TILE);
             Camera.snapToPlayer();
         }
-        
-        console.log(`[Tilemap] Loaded ${mapWidth}x${mapHeight} map with ${entities.length} entities`);
+
+        console.log('[Tilemap] Loaded', areaId, 'with', entities.length, 'entities');
     }
     
     function generateFallbackMap() {
@@ -146,6 +179,13 @@ const Tilemap = (function() {
         const idx = entities.indexOf(entity);
         if (idx >= 0) {
             entities.splice(idx, 1);
+        }
+        // Persist removal so it survives area transitions
+        if (currentAreaId) {
+            if (!removedEntities[currentAreaId]) removedEntities[currentAreaId] = new Set();
+            removedEntities[currentAreaId].add(entityKey(entity));
+            saveRemovedEntities();
+            console.log('[Tilemap] Removed entity:', entityKey(entity), 'in', currentAreaId);
         }
     }
     

@@ -462,85 +462,81 @@ const CombatFull = (function() {
 
     function _rCombatants() {
         // ── PLAYER (bottom-left of scene) ─────────────────────
-        const pX = 16, pY = SCENE_H - 96, pW = 66, pH = 90;
-        ctx.fillStyle = '#1c1628';
-        ctx.fillRect(pX, pY, pW, pH);
-        ctx.strokeStyle = '#5a4878';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(pX, pY, pW, pH);
+        const pCx = 60;
+        const pY  = SCENE_H - 80;   // top of 28×56 sprite; bottom = pY+56
 
-        if (typeof SPRITES_48 !== 'undefined' && SPRITES_48.has('player_down')) {
+        if (typeof drawPlayerCombat !== 'undefined') {
+            drawPlayerCombat(ctx, pCx, pY);
+        } else if (typeof SPRITES_48 !== 'undefined' && SPRITES_48.has('player_down')) {
             const sc = 1.3;
             ctx.save();
-            ctx.translate(pX + ((pW - 48 * sc) / 2 | 0), pY + 4);
+            ctx.translate(pCx - (48 * sc / 2 | 0), pY + 4);
             ctx.scale(sc, sc);
             SPRITES_48.draw('player_down', ctx, 0, 0, 0);
             ctx.restore();
         } else {
-            _drawPlayerSprite(ctx, pX + (pW >> 1), pY + pH - 2);
+            _drawPlayerSprite(ctx, pCx, pY + 54);
         }
 
         if (!enemy) return;
 
         // ── ENEMY (centred in scene) ──────────────────────────
-        const eX = (W - 200) >> 1, eY = 10, eW = 200, eH = 162;
-        ctx.fillStyle = '#140e1e';
-        ctx.fillRect(eX, eY, eW, eH);
-        ctx.strokeStyle = '#6a3040';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(eX, eY, eW, eH);
-        ctx.lineWidth = 1;
+        const eCx = W >> 1;
 
-        const SPRITE_MAP = {
-            enemy_wolf:     'wolf',    enemy_bandit:   'bandit',
-            enemy_undead:   'undead',  enemy_spirit:   'spirit',
-            enemy_boss:     'boss_guardian',
-            giant_rat:      'giant_rat',
-            enemy_rat:      'giant_rat',
-            enemy_skeleton: 'skeleton',
-            skeleton:       'skeleton',
-            enemy_goblin:   'goblin',
-            goblin:         'goblin',
-        };
-        const spName = SPRITE_MAP[enemy.sprite];
-        const eCx = eX + (eW >> 1);
-        const eCy = eY + (eH >> 1);
-
-        if (spName && typeof SPRITES_48 !== 'undefined' && SPRITES_48.has(spName)) {
-            const sc = 3;
-            ctx.save();
-            ctx.translate(eX + ((eW - 48 * sc) / 2 | 0), eY + ((eH - 48 * sc) / 2 | 0));
-            ctx.scale(sc, sc);
-            SPRITES_48.draw(spName, ctx, 0, 0, 0);
-            ctx.restore();
+        if (typeof drawCombatEnemy !== 'undefined') {
+            drawCombatEnemy(ctx, enemy, eCx, 0, W, SCENE_H);
         } else {
-            const eName = (enemy.name || '').toLowerCase();
-            if      (eName.includes('rat'))                                       _drawRat(ctx, eCx, eCy);
-            else if (eName.includes('wolf'))                                      _drawWolf(ctx, eCx, eCy);
-            else if (eName.includes('bandit') || eName.includes('gladiator'))     _drawBandit(ctx, eCx, eCy);
-            else if (eName.includes('shade') || eName.includes('spirit') || eName.includes('sprite')) _drawSpirit(ctx, eCx, eCy);
-            else                                                                  _drawDefaultEnemy(ctx, eCx, eCy);
+            // Legacy fallback
+            const eX = (W - 200) >> 1, eY = 10, eW = 200, eH = 162;
+            ctx.fillStyle = '#140e1e';
+            ctx.fillRect(eX, eY, eW, eH);
+            ctx.strokeStyle = '#6a3040'; ctx.lineWidth = 2;
+            ctx.strokeRect(eX, eY, eW, eH); ctx.lineWidth = 1;
+            const SPRITE_MAP = {
+                enemy_wolf: 'wolf', enemy_bandit: 'bandit', enemy_undead: 'undead',
+                enemy_spirit: 'spirit', enemy_boss: 'boss_guardian',
+                giant_rat: 'giant_rat', enemy_rat: 'giant_rat',
+                enemy_skeleton: 'skeleton', skeleton: 'skeleton',
+                enemy_goblin: 'goblin', goblin: 'goblin',
+            };
+            const spName = SPRITE_MAP[enemy.sprite];
+            const eXc = eX + (eW >> 1), eYc = eY + (eH >> 1);
+            if (spName && typeof SPRITES_48 !== 'undefined' && SPRITES_48.has(spName)) {
+                const sc = 3;
+                ctx.save();
+                ctx.translate(eX + ((eW - 48*sc)/2 | 0), eY + ((eH - 48*sc)/2 | 0));
+                ctx.scale(sc, sc);
+                SPRITES_48.draw(spName, ctx, 0, 0, 0);
+                ctx.restore();
+            } else {
+                const n = (enemy.name || '').toLowerCase();
+                if      (n.includes('rat'))    _drawRat(ctx, eXc, eYc);
+                else if (n.includes('wolf'))   _drawWolf(ctx, eXc, eYc);
+                else if (n.includes('bandit') || n.includes('gladiator')) _drawBandit(ctx, eXc, eYc);
+                else if (n.includes('shade') || n.includes('spirit') || n.includes('sprite')) _drawSpirit(ctx, eXc, eYc);
+                else   _drawDefaultEnemy(ctx, eXc, eYc);
+            }
         }
 
-        // Body part HP indicators
+        // ── Body-part HP indicators (centred below enemy) ─────
+        // enemy centre ≈ SCENE_H*0.44, half-height ≈ SCENE_H*0.175 → bottom ≈ 144
+        const indY = (SCENE_H * 0.44 + SCENE_H * 0.175 + 10) | 0;
         if (analyzed || activeTab === 0) {
             ctx.textAlign = 'center';
             enemy.parts.forEach((p, i) => {
                 const ratio = p.hp / p.maxHp;
                 ctx.fillStyle = ratio > 0.6 ? '#60c060' : ratio > 0.3 ? '#c0a030' : ratio > 0 ? '#c03030' : '#333';
                 ctx.font = '7px monospace';
-                ctx.fillText(p.label.slice(0, 4), eX + 8 + i * 38, eY + eH - 6);
+                ctx.fillText(p.label.slice(0, 4), eCx + (i - 2) * 38, indY);
             });
             ctx.textAlign = 'left';
         }
 
-        // Targeting highlight on active tab 0
+        // ── Targeting highlight ───────────────────────────────
         if (activeTab === 0 && phase === 'menu') {
-            const bx = eX + 6 + selIndex * 38;
-            const by = eY + eH - 18;
             ctx.strokeStyle = '#ffd700';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(bx, by, 34, 12);
+            ctx.lineWidth   = 1;
+            ctx.strokeRect(eCx + (selIndex - 2) * 38 - 17, indY - 14, 34, 12);
         }
 
         ctx.lineWidth = 1;

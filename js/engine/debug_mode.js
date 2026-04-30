@@ -77,6 +77,7 @@ const DebugMode = (function () {
         `;
         container.appendChild(overlay);
         octx = overlay.getContext('2d');
+        octx.imageSmoothingEnabled = false;
 
         // Teleport on click
         container.addEventListener('click', onCanvasClick);

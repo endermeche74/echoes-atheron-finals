@@ -80,6 +80,7 @@ const InventoryCanvas = (function() {
         const container = document.getElementById('canvas-container');
         if (container) container.appendChild(canvas);
         ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
         startLoop();
     }
 

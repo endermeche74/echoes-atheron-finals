@@ -76,12 +76,14 @@ const Engine = (function() {
         canvasContainer = document.createElement('div');
         canvasContainer.id = 'canvas-container';
         canvasContainer.style.cssText = `
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             position: relative;
             width: ${CANVAS_WIDTH * SCALE}px;
             height: ${CANVAS_HEIGHT * SCALE}px;
             margin: 0 auto;
-            background: ${PALETTE.void};
+            background: #000;
         `;
 
         canvas = document.createElement('canvas');
@@ -89,8 +91,8 @@ const Engine = (function() {
         canvas.width  = CANVAS_WIDTH;
         canvas.height = CANVAS_HEIGHT;
         canvas.style.cssText = `
-            width: 100%;
-            height: 100%;
+            width: ${CANVAS_WIDTH * SCALE}px;
+            height: ${CANVAS_HEIGHT * SCALE}px;
             image-rendering: pixelated;
             image-rendering: crisp-edges;
             display: block;

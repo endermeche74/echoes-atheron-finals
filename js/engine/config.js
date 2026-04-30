@@ -5,10 +5,12 @@
 
 const CONFIG = {
     // Display
-    TILE:     48,
-    CANVAS_W: 624,   // 13 * 48
-    CANVAS_H: 336,   //  7 * 48
-    SCALE:    2,     // affichage 1248x672
+    TILE:          48,
+    TILE_SIZE:     48,
+    CANVAS_W:      624,   // 13 * 48
+    CANVAS_H:      336,   //  7 * 48
+    SCALE:         2,     // affichage 1248x672
+    DISPLAY_SCALE: 2,
     GRID_W:   13,
     GRID_H:   7,
 

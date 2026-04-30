@@ -34,6 +34,7 @@
         
         if (typeof Engine !== 'undefined' && Engine.isCanvasMode && Engine.isCanvasMode()) {
             const ctx = overlay.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
             ctx.clearRect(0, 0, CONFIG.CANVAS_W, CONFIG.CANVAS_H);
 
             let camX = 0, camY = 0;

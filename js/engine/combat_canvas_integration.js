@@ -93,6 +93,7 @@
             combatCanvas.style.display = 'block';
             CombatCanvas.update(dt);
             const ctx = combatCanvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
             ctx.clearRect(0, 0, CONFIG.CANVAS_W, CONFIG.CANVAS_H);
             CombatCanvas.render(ctx);
         } else {

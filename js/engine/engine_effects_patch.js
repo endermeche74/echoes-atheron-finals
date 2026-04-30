@@ -70,6 +70,7 @@
         // Keep overlay canvas clear (engine.js renders effects on main canvas)
         if (effectsOverlay) {
             const ectx = effectsOverlay.getContext('2d');
+            ectx.imageSmoothingEnabled = false;
             ectx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
         }
 

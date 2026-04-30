@@ -193,6 +193,7 @@
             
             // Render lighting
             const ctx = lightingCanvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
             ctx.clearRect(0, 0, CONFIG.CANVAS_W, CONFIG.CANVAS_H);
             Lighting.render(ctx, CONFIG.CANVAS_W, CONFIG.CANVAS_H, camX, camY);
         }

@@ -40,6 +40,7 @@
         }
         
         const ctx = uiCanvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
         ctx.clearRect(0, 0, 320, 240);
         
         // Update systems

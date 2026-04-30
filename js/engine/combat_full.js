@@ -7,18 +7,15 @@
 const CombatFull = (function() {
 
     // ── LAYOUT ────────────────────────────────────────────────
-    const W        = CONFIG.CANVAS_W;   // 624
-    const H        = CONFIG.CANVAS_H;   // 336
-    const PANEL_Y  = 192;
-    const PANEL_H  = H - PANEL_Y - 4;  // 140
-    const PANEL_X  = 6;
-    const PANEL_W  = W - 12;
-    const TAB_H    = 22;
-    const CON_Y    = PANEL_Y + TAB_H + 2;   // content top
-    const CON_H    = PANEL_H - TAB_H - 14;  // content height (leave hint bar)
+    const W       = CONFIG.CANVAS_W;  // 624
+    const H       = CONFIG.CANVAS_H;  // 336
+    const SCENE_H = 235;              // top 70 % — combat scene
+    const PANEL_Y = 235;              // bottom 30 % starts here
+    const PANEL_H = H - PANEL_Y;     // 101
+    const SEP_X   = 156;             // left / right panel split
 
     // ── STATIC DATA ───────────────────────────────────────────
-    const TABS = ['ATTACK', 'SKILLS', 'ITEMS', 'OTHER'];
+    const TABS = ['Attack', 'Skills', 'Guard', 'Item'];
 
     const BODY_PARTS = [
         { id: 'head',  label: 'HEAD',   hit: 55, dmgMul: 1.8, maxHp: 20 },
@@ -424,15 +421,16 @@ const CombatFull = (function() {
         ctx.save();
         if (shakeX || shakeY) ctx.translate(shakeX, shakeY);
 
+        _rBg();
+        _rCombatants();
+        _rHUD();
+        _rPanel();
+
         if (flashTimer > 0 && flashColor) {
             ctx.fillStyle = flashColor;
             ctx.fillRect(0, 0, W, H);
         }
 
-        _rBg();
-        _rCombatants();
-        _rHUD();
-        _rPanel();
         _rFloaters();
         if (animState) _rAnim();
 
@@ -443,22 +441,28 @@ const CombatFull = (function() {
     }
 
     function _rBg() {
-        const g = ctx.createLinearGradient(0, 0, 0, PANEL_Y);
-        g.addColorStop(0, '#090710');
-        g.addColorStop(1, '#180e24');
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, W, H);
+        // Scene area — dark painted base
+        ctx.fillStyle = '#0d0d0d';
+        ctx.fillRect(0, 0, W, SCENE_H);
 
-        const v = ctx.createRadialGradient(W/2, H*0.4, H*0.1, W/2, H*0.4, H*0.75);
-        v.addColorStop(0, 'rgba(0,0,0,0)');
-        v.addColorStop(1, 'rgba(0,0,0,0.55)');
-        ctx.fillStyle = v;
-        ctx.fillRect(0, 0, W, PANEL_Y);
+        // Radial vignette: slightly lighter centre (~#1a1208), dark edges
+        const vg = ctx.createRadialGradient(
+            W * 0.5, SCENE_H * 0.42, SCENE_H * 0.06,
+            W * 0.5, SCENE_H * 0.42, SCENE_H * 0.88
+        );
+        vg.addColorStop(0, 'rgba(26,18,8,0.55)');
+        vg.addColorStop(1, 'rgba(0,0,0,0.84)');
+        ctx.fillStyle = vg;
+        ctx.fillRect(0, 0, W, SCENE_H);
+
+        // Panel area
+        ctx.fillStyle = '#0a0808';
+        ctx.fillRect(0, PANEL_Y, W, PANEL_H);
     }
 
     function _rCombatants() {
-        // ── PLAYER (left, back view) ──────────────────────────
-        const pX = 38, pY = 88, pW = 66, pH = 90;
+        // ── PLAYER (bottom-left of scene) ─────────────────────
+        const pX = 16, pY = SCENE_H - 96, pW = 66, pH = 90;
         ctx.fillStyle = '#1c1628';
         ctx.fillRect(pX, pY, pW, pH);
         ctx.strokeStyle = '#5a4878';
@@ -478,8 +482,8 @@ const CombatFull = (function() {
 
         if (!enemy) return;
 
-        // ── ENEMY (right) ─────────────────────────────────────
-        const eX = 355, eY = 18, eW = 200, eH = 162;
+        // ── ENEMY (centred in scene) ──────────────────────────
+        const eX = (W - 200) >> 1, eY = 10, eW = 200, eH = 162;
         ctx.fillStyle = '#140e1e';
         ctx.fillRect(eX, eY, eW, eH);
         ctx.strokeStyle = '#6a3040';
@@ -765,47 +769,24 @@ const CombatFull = (function() {
         const hp = _hp(), maxHp = _maxHp();
         const mp = _mp(), maxMp = _maxMp();
 
-        // Player HP/MP (top left)
-        ctx.fillStyle = 'rgba(8,6,16,0.86)';
-        ctx.fillRect(4, 4, 172, buffed ? 48 : 38);
-        ctx.strokeStyle = '#2e2c44';
-        ctx.strokeRect(4, 4, 172, buffed ? 48 : 38);
+        // Player stats — top-left of scene area
+        ctx.fillStyle = 'rgba(0,0,0,0.65)';
+        ctx.fillRect(4, 4, 140, buffed ? 46 : 36);
 
-        _bar(ctx, 26, 8,  142, 10, hp, maxHp, '#3a8040', '#0e1a0e');
-        ctx.fillStyle = '#a0b8a0'; ctx.font = '8px monospace';
-        ctx.fillText('HP ' + hp + '/' + maxHp, 28, 17);
+        _bar(ctx, 4,  6, 140, 9, hp, maxHp, '#6a1a1a', '#1a0808');
+        ctx.fillStyle = '#ff9999';
+        ctx.font = '10px Georgia';
+        ctx.fillText('HP ' + hp + '/' + maxHp, 6, 14);
 
-        _bar(ctx, 26, 22, 142, 10, mp, maxMp, '#3a5a90', '#0e0e1a');
-        ctx.fillStyle = '#a0a0c0';
-        ctx.fillText('MP ' + mp + '/' + maxMp, 28, 31);
+        _bar(ctx, 4, 20, 140, 9, mp, maxMp, '#1a4a8b', '#08081a');
+        ctx.fillStyle = '#6ab0ff';
+        ctx.font = '10px Georgia';
+        ctx.fillText('MP ' + mp + '/' + maxMp, 6, 28);
 
         if (buffed) {
             ctx.fillStyle = '#ffd700';
-            ctx.font = '8px monospace';
-            ctx.fillText('ATK+ (' + buffTurns + ' turns)', 8, 46);
-        }
-
-        if (!enemy) return;
-
-        // Enemy HP (top right)
-        const ew = 192, ex = W - ew - 4;
-        ctx.fillStyle = 'rgba(8,6,16,0.86)';
-        ctx.fillRect(ex, 4, ew, analyzed ? 38 : 28);
-        ctx.strokeStyle = '#2e2c44';
-        ctx.strokeRect(ex, 4, ew, analyzed ? 38 : 28);
-
-        ctx.fillStyle = '#c07080';
-        ctx.font = 'bold 9px monospace';
-        ctx.fillText(enemy.name.toUpperCase(), ex + 6, 14);
-
-        _bar(ctx, ex + 6, 17, ew - 12, 9, enemy.hp, enemy.maxHp, '#8a3040', '#2a0e10');
-        ctx.fillStyle = '#a09090'; ctx.font = '8px monospace';
-        ctx.fillText(enemy.hp + '/' + enemy.maxHp, ex + 8, 25);
-
-        if (analyzed) {
-            ctx.fillStyle = '#8888aa';
-            ctx.font = '7px monospace';
-            ctx.fillText('ATK:' + enemy.atk + '  DEF:' + enemy.def, ex + 6, 36);
+            ctx.font = '9px Georgia';
+            ctx.fillText('ATK+ (' + buffTurns + ' turns)', 6, 40);
         }
     }
 
@@ -820,241 +801,199 @@ const CombatFull = (function() {
     }
 
     function _rPanel() {
-        // Background
-        ctx.fillStyle = 'rgba(6,5,14,0.97)';
-        ctx.fillRect(PANEL_X, PANEL_Y, PANEL_W, PANEL_H);
-        ctx.strokeStyle = '#302e50';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(PANEL_X, PANEL_Y, PANEL_W, PANEL_H);
+        // Top border
+        ctx.strokeStyle = '#3a2a1a';
         ctx.lineWidth = 1;
-
-        // Separator between tabs and content
-        ctx.strokeStyle = '#302e50';
         ctx.beginPath();
-        ctx.moveTo(PANEL_X, PANEL_Y + TAB_H);
-        ctx.lineTo(PANEL_X + PANEL_W, PANEL_Y + TAB_H);
+        ctx.moveTo(0, PANEL_Y);
+        ctx.lineTo(W, PANEL_Y);
         ctx.stroke();
 
-        // Tabs
-        const tw = Math.floor(PANEL_W / TABS.length);
-        for (let i = 0; i < TABS.length; i++) {
-            const tx  = PANEL_X + i * tw;
-            const sel = i === activeTab;
-            ctx.fillStyle = sel ? 'rgba(45,35,75,0.95)' : 'rgba(16,13,28,0.7)';
-            ctx.fillRect(tx, PANEL_Y, tw, TAB_H);
-            if (sel) {
-                ctx.fillStyle = '#8060c0';
-                ctx.fillRect(tx, PANEL_Y, tw, 2);
-            }
-            ctx.strokeStyle = sel ? '#7050b0' : '#2a2840';
-            ctx.strokeRect(tx, PANEL_Y, tw, TAB_H);
-            ctx.fillStyle = sel ? '#d4a840' : '#605868';
-            ctx.font = sel ? 'bold 10px monospace' : '10px monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText(TABS[i], tx + tw / 2, PANEL_Y + 14);
-        }
-        ctx.textAlign = 'left';
+        // Vertical separator at x=156
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#3a2a1a';
+        ctx.beginPath();
+        ctx.moveTo(SEP_X, PANEL_Y);
+        ctx.lineTo(SEP_X, H);
+        ctx.stroke();
+        ctx.lineWidth = 1;
 
-        // Content
         const isMsg = phase === 'player_msg' || phase === 'enemy_msg';
-        if (isMsg) {
-            _rMessage();
-        } else {
-            switch (activeTab) {
-                case 0: _rAttackTab(); break;
-                case 1: _rSkillsTab(); break;
-                case 2: _rItemsTab();  break;
-                case 3: _rOtherTab();  break;
+        if (isMsg) { _rMessage(); return; }
+
+        _rLeftPanel();
+        _rRightPanel();
+    }
+
+    function _rLeftPanel() {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, PANEL_Y, SEP_X, PANEL_H);
+        ctx.clip();
+
+        const lx = 8;
+
+        // Current category header
+        ctx.fillStyle = '#5a4a3a';
+        ctx.font = '10px Georgia';
+        ctx.fillText(TABS[activeTab].toUpperCase(), lx, PANEL_Y + 12);
+
+        // Item list
+        const items  = _listForTab();
+        const startY = PANEL_Y + 26;
+        const rowH   = 16;
+
+        for (let i = 0; i < items.length; i++) {
+            const it   = items[i];
+            const sel  = i === selIndex;
+            const y    = startY + i * rowH;
+            if (y > H - 10) break;
+
+            const dead = (activeTab === 0 && it.hp <= 0);
+            let label  = (it.label || it.name || it.id || '').slice(0, 12);
+
+            if (sel) {
+                ctx.fillStyle = '#3d1a1a';
+                ctx.fillRect(0, y - 12, SEP_X, rowH);
+            }
+
+            ctx.fillStyle = sel ? '#e8d5a0' : dead ? '#4a3030' : '#8a7a6a';
+            ctx.font = '13px Georgia';
+            ctx.fillText((sel ? '>' : ' ') + ' ' + label, lx, y);
+        }
+
+        if (items.length === 0) {
+            ctx.fillStyle = '#4a3a2a';
+            ctx.font = '12px Georgia';
+            ctx.fillText('  — empty —', lx, startY);
+        }
+
+        // Nav hint
+        ctx.fillStyle = '#3a2a1a';
+        ctx.font = '9px Georgia';
+        ctx.fillText('Z/S nav  Q/D tab  E ok', lx, H - 3);
+
+        ctx.restore();
+    }
+
+    function _rRightPanel() {
+        if (!enemy) return;
+
+        const rx = SEP_X + 12;
+        let   y  = PANEL_Y + 16;
+
+        // Enemy name
+        ctx.fillStyle = '#c89a7a';
+        ctx.font = 'bold 14px Georgia';
+        ctx.fillText(enemy.name.toUpperCase(), rx, y);
+        y += 22;
+
+        // Body bar (HP)
+        ctx.fillStyle = '#ff9999';
+        ctx.font = '12px Georgia';
+        ctx.fillText('BODY', rx, y);
+        _bar(ctx, rx + 36, y - 9, 200, 10, enemy.hp, enemy.maxHp, '#8b1a1a', '#1a0a0a');
+        ctx.fillStyle = '#7a5a5a';
+        ctx.font = '11px Georgia';
+        ctx.fillText(enemy.hp + '/' + enemy.maxHp, rx + 242, y);
+        y += 18;
+
+        // Mind bar (uses enemy.mind if present, else derives from maxHp)
+        const maxMind = enemy.maxMind || Math.ceil(enemy.maxHp * 0.5);
+        const mind    = enemy.mind !== undefined ? enemy.mind : maxMind;
+        ctx.fillStyle = '#6ab0ff';
+        ctx.font = '12px Georgia';
+        ctx.fillText('MIND', rx, y);
+        _bar(ctx, rx + 36, y - 9, 200, 10, mind, maxMind, '#1a4a8b', '#080a1a');
+        ctx.fillStyle = '#5a7a9a';
+        ctx.font = '11px Georgia';
+        ctx.fillText(mind + '/' + maxMind, rx + 242, y);
+        y += 20;
+
+        _rContextInfo(rx, y);
+    }
+
+    function _rContextInfo(rx, y) {
+        if (!enemy) return;
+        ctx.font = '12px Georgia';
+
+        switch (activeTab) {
+            case 0: {
+                if (selIndex >= BODY_PARTS.length) break;
+                const bp  = BODY_PARTS[selIndex];
+                const ep  = enemy.parts[selIndex];
+                const atk = _atk() * (buffed ? 1.5 : 1);
+                const lo  = Math.max(1, Math.floor(atk * bp.dmgMul * 0.8 - enemy.def * 0.5));
+                const hi  = Math.max(1, Math.floor(atk * bp.dmgMul * 1.2 - enemy.def * 0.5));
+                ctx.fillStyle = ep.hp <= 0 ? '#7a3030' : '#8a7a6a';
+                ctx.fillText('Hit ' + bp.hit + '%   Dmg ' + lo + '–' + hi +
+                    (ep.hp <= 0 ? '   [DESTROYED]' : ''), rx, y);
+                break;
+            }
+            case 1: {
+                const sk = _getSkills().filter(s => !s.sep)[selIndex];
+                if (!sk) break;
+                const grey = (sk.mp || 0) > _mp();
+                ctx.fillStyle = grey ? '#883030' : '#8a8070';
+                ctx.fillText((sk.desc || '') + (sk.mp ? '  (' + sk.mp + ' MP)' : ''), rx, y);
+                if (grey) {
+                    y += 14;
+                    ctx.fillStyle = '#aa3030';
+                    ctx.fillText('Not enough MP!', rx, y);
+                }
+                break;
+            }
+            case 2: {
+                const it = _getItems()[selIndex];
+                if (it && it.desc) {
+                    ctx.fillStyle = '#8a8070';
+                    ctx.fillText(it.desc, rx, y);
+                }
+                break;
+            }
+            case 3: {
+                const opt = OTHER_OPTIONS[selIndex];
+                if (opt) {
+                    ctx.fillStyle = opt.id === 'give_up' ? '#aa3030' : '#8a8070';
+                    ctx.fillText(opt.desc || '', rx, y);
+                }
+                break;
             }
         }
 
-        // Hint bar
-        ctx.fillStyle = '#2e2c40';
-        ctx.font = '8px monospace';
-        ctx.fillText('Z/S: Navigate   Q/D: Tab   E: Confirm   Esc: Back', PANEL_X + 8, PANEL_Y + PANEL_H - 5);
+        if (analyzed) {
+            ctx.fillStyle = '#7a7a9a';
+            ctx.font = '11px Georgia';
+            ctx.fillText('ATK ' + enemy.atk + '   DEF ' + enemy.def, rx, y + 14);
+        }
     }
 
     function _rMessage() {
         const msg = msgQueue[0] || '';
-        ctx.fillStyle = '#c0b8a0';
-        ctx.font = '11px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(msg, W / 2, CON_Y + CON_H / 2);
+
+        // Left panel stays visible (dimmed)
+        _rLeftPanel();
+
+        // Message in right panel
+        ctx.fillStyle = '#c0b0a0';
+        ctx.font = '13px Georgia';
+
+        const maxW = W - SEP_X - 24;
+        let words  = msg.split(' '), line = '', my = PANEL_Y + 22;
+        for (const w of words) {
+            const test = line ? line + ' ' + w : w;
+            if (ctx.measureText(test).width > maxW && line) {
+                ctx.fillText(line, SEP_X + 12, my);
+                line = w; my += 16;
+            } else { line = test; }
+        }
+        if (line) ctx.fillText(line, SEP_X + 12, my);
+
+        // Continue prompt
         if (Math.floor(performance.now() / 450) % 2 === 0) {
-            ctx.fillStyle = '#5050a0';
-            ctx.fillText('▼ E to continue', W / 2, CON_Y + CON_H / 2 + 18);
-        }
-        ctx.textAlign = 'left';
-    }
-
-    function _rAttackTab() {
-        const lx = PANEL_X + 8;
-        const rx = PANEL_X + Math.floor(PANEL_W * 0.56);
-        let y = CON_Y + 14;
-
-        for (let i = 0; i < BODY_PARTS.length; i++) {
-            const bp  = BODY_PARTS[i];
-            const ep  = enemy.parts[i];
-            const sel = i === selIndex;
-            const dead = ep.hp <= 0;
-
-            if (sel) {
-                ctx.fillStyle = 'rgba(70,55,18,0.55)';
-                ctx.fillRect(lx - 2, y - 11, Math.floor(PANEL_W * 0.53), 14);
-            }
-
-            ctx.fillStyle = sel ? '#ffd700' : dead ? '#3a3840' : '#b0a898';
-            ctx.font = sel ? 'bold 10px monospace' : '10px monospace';
-            ctx.fillText((sel ? '► ' : '  ') + bp.label, lx, y);
-
-            _bar(ctx, lx + 74, y - 9, 62, 8, ep.hp, ep.maxHp,
-                ep.hp > ep.maxHp * 0.5 ? '#3a8040' : ep.hp > ep.maxHp * 0.2 ? '#8a7820' : '#8a2820',
-                '#120e0e');
-            ctx.fillStyle = dead ? '#3a3840' : '#706870';
-            ctx.font = '8px monospace';
-            ctx.fillText(ep.hp + '/' + ep.maxHp, lx + 138, y);
-
-            y += 16;
-        }
-
-        // Detail panel (right column)
-        if (enemy && selIndex < BODY_PARTS.length) {
-            const bp  = BODY_PARTS[selIndex];
-            const ep  = enemy.parts[selIndex];
-            const atk = _atk() * (buffed ? 1.5 : 1);
-            const lo  = Math.max(1, Math.floor(atk * bp.dmgMul * 0.8 - enemy.def * 0.5));
-            const hi  = Math.max(1, Math.floor(atk * bp.dmgMul * 1.2 - enemy.def * 0.5));
-
-            ctx.fillStyle = '#5a5468';
-            ctx.font = '9px monospace';
-            ctx.fillText('Target:   ' + bp.label,         rx, CON_Y + 14);
-            ctx.fillStyle = ep.hp <= 0 ? '#444' : '#a0a0b8';
-            ctx.fillText('Hit rate: ' + bp.hit + '%',     rx, CON_Y + 28);
-            ctx.fillText('Damage:   ' + lo + ' – ' + hi, rx, CON_Y + 42);
-            ctx.fillStyle = '#c0a030';
-            ctx.fillText('Crit ×1.8: ~' + Math.floor(hi * 1.8), rx, CON_Y + 56);
-            if (ep.hp <= 0) {
-                ctx.fillStyle = '#aa3030';
-                ctx.fillText('DESTROYED', rx, CON_Y + 72);
-            }
-        }
-    }
-
-    function _rSkillsTab() {
-        const skills = _getSkills();
-        const lx = PANEL_X + 8;
-        const rx = PANEL_X + Math.floor(PANEL_W * 0.56);
-        let y = CON_Y + 14;
-        let ri = 0;   // real index (non-sep)
-
-        for (let i = 0; i < skills.length; i++) {
-            const sk = skills[i];
-            if (sk.sep) {
-                ctx.fillStyle = '#302e48';
-                ctx.font = '9px monospace';
-                ctx.fillText(sk.name, lx + 18, y);
-                y += 13; continue;
-            }
-            const sel  = ri === selIndex;
-            const grey = (sk.mp || 0) > _mp();
-
-            if (sel) {
-                ctx.fillStyle = 'rgba(70,55,18,0.55)';
-                ctx.fillRect(lx - 2, y - 11, Math.floor(PANEL_W * 0.53), 14);
-            }
-
-            ctx.fillStyle = grey ? '#3a3840' : sel ? '#ffd700' : '#b0a898';
-            ctx.font = sel ? 'bold 10px monospace' : '10px monospace';
-            ctx.fillText((sel ? '► ' : '  ') + sk.name, lx, y);
-
-            ctx.fillStyle = grey ? '#3a3840' : '#507090';
-            ctx.font = '9px monospace';
-            ctx.fillText(sk.mp + ' MP', lx + 178, y);
-
-            if (sel) {
-                ctx.fillStyle = '#908898';
-                ctx.font = '9px monospace';
-                ctx.fillText(sk.desc || '', rx, CON_Y + 18);
-                if (grey) { ctx.fillStyle = '#883030'; ctx.fillText('Not enough MP!', rx, CON_Y + 32); }
-            }
-
-            y += 15; ri++;
-        }
-    }
-
-    function _rItemsTab() {
-        const items = _getItems();
-        const lx = PANEL_X + 8;
-        const rx = PANEL_X + Math.floor(PANEL_W * 0.56);
-        let y = CON_Y + 14;
-
-        if (items.length === 0) {
-            ctx.fillStyle = '#484050';
-            ctx.font = '10px monospace';
-            ctx.fillText('  No usable items.', lx, y);
-            return;
-        }
-
-        for (let i = 0; i < items.length; i++) {
-            const it  = items[i];
-            const sel = i === selIndex;
-
-            if (sel) {
-                ctx.fillStyle = 'rgba(70,55,18,0.55)';
-                ctx.fillRect(lx - 2, y - 11, Math.floor(PANEL_W * 0.53), 14);
-            }
-
-            ctx.fillStyle = sel ? '#ffd700' : '#b0a898';
-            ctx.font = sel ? 'bold 10px monospace' : '10px monospace';
-            ctx.fillText((sel ? '► ' : '  ') + (it.name || it.id), lx, y);
-
-            const qty = it.qty || it.count || 1;
-            ctx.fillStyle = '#607080';
-            ctx.font = '9px monospace';
-            ctx.fillText('x' + qty, lx + 178, y);
-
-            if (sel && it.desc) {
-                ctx.fillStyle = '#908898';
-                ctx.font = '9px monospace';
-                ctx.fillText(it.desc, rx, CON_Y + 18);
-            }
-
-            y += 15;
-        }
-    }
-
-    function _rOtherTab() {
-        const lx = PANEL_X + 8;
-        const rx = PANEL_X + Math.floor(PANEL_W * 0.56);
-        let y = CON_Y + 14;
-
-        for (let i = 0; i < OTHER_OPTIONS.length; i++) {
-            const opt = OTHER_OPTIONS[i];
-            const sel = i === selIndex;
-
-            if (sel) {
-                ctx.fillStyle = 'rgba(70,55,18,0.55)';
-                ctx.fillRect(lx - 2, y - 11, Math.floor(PANEL_W * 0.53), 14);
-            }
-
-            ctx.fillStyle = (opt.id === 'give_up') ? (sel ? '#ff6060' : '#7a3030')
-                           : sel ? '#ffd700' : '#b0a898';
-            ctx.font = sel ? 'bold 10px monospace' : '10px monospace';
-            ctx.fillText((sel ? '► ' : '  ') + opt.label, lx, y);
-
-            if (opt.id === 'flee') {
-                ctx.fillStyle = '#507090';
-                ctx.font = '9px monospace';
-                ctx.fillText('45 %', lx + 178, y);
-            }
-
-            if (sel) {
-                ctx.fillStyle = '#908898';
-                ctx.font = '9px monospace';
-                ctx.fillText(opt.desc, rx, CON_Y + 18);
-            }
-
-            y += 15;
+            ctx.fillStyle = '#5a4a3a';
+            ctx.font = '11px Georgia';
+            ctx.fillText('▼ E', SEP_X + 12, H - 5);
         }
     }
 

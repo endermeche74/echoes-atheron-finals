@@ -232,20 +232,20 @@ const Tilemap = (function() {
 
             // ── VOID ─────────────────────────────────────────
             case TILES.VOID:
-                ctx.fillStyle = P.void;
+                ctx.fillStyle = '#050505';
                 ctx.fillRect(px, py, T, T);
                 break;
 
             // ── FLOOR — stone slabs with mortar joints ───────
             case TILES.FLOOR: {
-                // Base
-                ctx.fillStyle = '#2a2833';
+                // Base — warm horror stone
+                ctx.fillStyle = '#2d2016';
                 ctx.fillRect(px, py, T, T);
 
                 // 2×2 stone slabs (each ~22×22 with 2px mortar)
                 const slab = [
-                    '#2e2c3a', '#28263a', '#2c2a38', '#30283a',
-                    '#262436', '#2a2836', '#2e2638'
+                    '#332418', '#2e2014', '#31221a', '#35261a',
+                    '#2b1e12', '#2f2216', '#332018'
                 ];
                 ctx.fillStyle = slab[seed];
                 ctx.fillRect(px + 2,    py + 2,    21, 21);
@@ -257,11 +257,16 @@ const Tilemap = (function() {
                 ctx.fillRect(px + 25,   py + 25,   21, 21);
 
                 // Mortar (dark joints)
-                ctx.fillStyle = '#18161e';
+                ctx.fillStyle = '#120e08';
                 ctx.fillRect(px,      py,      T, 2);   // top
                 ctx.fillRect(px,      py,      2, T);   // left
                 ctx.fillRect(px + 23, py,      2, T);   // center-v
                 ctx.fillRect(px,      py + 23, T, 2);   // center-h
+
+                // Subtle grid overlay
+                ctx.fillStyle = 'rgba(255,255,255,0.031)';
+                ctx.fillRect(px,      py,      T, 1);
+                ctx.fillRect(px,      py,      1, T);
 
                 // Subtle highlight corner on each slab
                 ctx.fillStyle = 'rgba(255,255,255,0.04)';
@@ -272,7 +277,7 @@ const Tilemap = (function() {
 
                 // Crack overlay — ~1 in 5 tiles
                 if (seed === 0) {
-                    ctx.fillStyle = '#18161e';
+                    ctx.fillStyle = '#120e08';
                     ctx.fillRect(px + 14 + seed2, py + 8,  2, 12);
                     ctx.fillRect(px + 16 + seed2, py + 16, 6,  2);
                 } else if (seed === 3) {
@@ -284,13 +289,13 @@ const Tilemap = (function() {
             // ── WALL — 3-row running-bond brickwork ──────────
             case TILES.WALL: {
                 // Base stone fill
-                ctx.fillStyle = '#3d3a4a';
+                ctx.fillStyle = '#1a1a1a';
                 ctx.fillRect(px, py, T, T);
 
                 // Three rows of bricks (S=16px per row)
-                const brickLight  = ['#42404e', '#464452', '#403e4c'];
-                const brickShadow = '#2a2838';
-                const mortarCol   = '#1e1c28';
+                const brickLight  = ['#222222', '#252525', '#1f1f1f'];
+                const brickShadow = '#101010';
+                const mortarCol   = '#0e0e0e';
 
                 for (let row = 0; row < 3; row++) {
                     const ry  = py + row * S;
@@ -332,6 +337,11 @@ const Tilemap = (function() {
                 // Cast shadow at base
                 ctx.fillStyle = 'rgba(0,0,0,0.35)';
                 ctx.fillRect(px, py + T - 6, T, 6);
+
+                // Outer stroke
+                ctx.strokeStyle = '#2a2a2a';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(px + 0.5, py + 0.5, T - 1, T - 1);
                 break;
             }
 

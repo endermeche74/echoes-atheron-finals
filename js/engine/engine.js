@@ -180,6 +180,9 @@ const Engine = (function() {
 
         ctx.restore();
 
+        // ── Vignette (screen space, after world, before UI) ───
+        drawVignette(ctx, CANVAS_WIDTH, CANVAS_HEIGHT);
+
         // ── Screen space UI ───────────────────────────────────
         renderUI();
 
@@ -192,6 +195,17 @@ const Engine = (function() {
         if (typeof CombatFull !== 'undefined' && CombatFull.isActive())
             CombatFull.render(ctx);
         // InventoryCanvas is self-rendering on its own overlay canvas (z-index 16)
+    }
+
+    // === VIGNETTE ===
+    function drawVignette(ctx, W, H, intensity = 0.92) {
+        const cx = W / 2, cy = H / 2;
+        const radius = Math.max(W, H) * 0.65;
+        const grad = ctx.createRadialGradient(cx, cy, radius * 0.25, cx, cy, radius);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(1, `rgba(0,0,0,${intensity})`);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
     }
 
     // === HUD ===

@@ -51,6 +51,15 @@ function advanceTime(type) {
     if (msgs[TIME.phase]) addLog(msgs[TIME.phase], 'd');
   }
 
+  /* Passive regen for L'Enveloppé (+2 HP every 3 hours) */
+  if (typeof P !== 'undefined' && P.passives && P.passives.regen_passive) {
+    if (TIME.totalHours % 3 === 0) {
+      var regen = 2;
+      P.hp = Math.min(P.maxHp, P.hp + regen);
+      addLog('+' + regen + ' HP (régénération)', 'h');
+    }
+  }
+
   /* Fatigue: only drains in deepest night (01:00 – 04:00) */
   if (_isDeepNight() && P.hp > 20) {
     var drain = cost * 3;
@@ -107,7 +116,8 @@ var NIGHT_BONUS = {
 };
 
 function getNightEnemy(areaId) {
-  return isNight() ? (NIGHT_BONUS[areaId] || null) : null;
+  var hasNightVision = typeof P !== 'undefined' && P.passives && P.passives.night_vision;
+  return (isNight() || hasNightVision) ? (NIGHT_BONUS[areaId] || null) : null;
 }
 
 function getTimeAmb() {

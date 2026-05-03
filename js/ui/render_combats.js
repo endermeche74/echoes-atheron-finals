@@ -50,7 +50,7 @@ function renderCombat() {
   html.push(
     '<div class="combatant">',
       '<div>',
-        '<div class="cname-p">' + P.name + '</div>',
+        '<div class="cname-p">' + P.name + (P.charClass ? ' · ' + P.charClass : '') + '</div>',
         '<div style="margin-top:4px">' + pTags + '</div>',
       '</div>',
       '<div style="text-align:right;flex-shrink:0">',

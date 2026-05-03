@@ -137,7 +137,7 @@ function doAbility(abId) {
       cLog((ab.icon||'⚔') + ' ' + ab.name + ': ' + dmg + ' dmg' + wkNote + '.', 'p');
     }
 
-    if (ab.se === 'bleed') { C.bleed = true; cLog('🩸 Bleeding!', 'p'); }
+    if (ab.se === 'bleed' && !(P.passives && P.passives.bleed_immune)) { C.bleed = true; cLog('🩸 Bleeding!', 'p'); }
     C.ehp -= dmg;
     sfxHitEnemy();
     gainXP(sk, 15);
@@ -183,7 +183,7 @@ function castSpell(sid) {
   }
 
   if (sp.se === 'stun'  || sp.se === 'frozen') { C.frozen  = true; cLog('❄ Frozen!', 'p'); }
-  if (sp.se === 'bleed')                        { C.bleed   = true; cLog('🩸 Bleeding!', 'p'); }
+  if (sp.se === 'bleed' && !(P.passives && P.passives.bleed_immune)) { C.bleed = true; cLog('🩸 Bleeding!', 'p'); }
   if (sp.se === 'defdown')                      { C.defdown = true; cLog('🌍 DEF reduced!', 'p'); }
 
   C.ehp -= dmg;
@@ -205,6 +205,13 @@ function enemyTurn() {
   if (C.unbrk) { cLog('⬡ ' + e.n + ' attacks — UNBREAKABLE!', 'e'); C.unbrk = false; return; }
   if (C.evade) { cLog('🌑 ' + e.n + ' attacks — EVADED!',      'e'); C.evade = false; return; }
 
+  /* Passive evade bonus (Le Bec +12%) */
+  var evadeBonus = (P.passives && P.passives.evade_bonus) ? P.passives.evade_bonus : 0;
+  if (evadeBonus > 0 && Math.random() < evadeBonus) {
+    cLog('🌑 ' + e.n + ' attacks — EVADED! (instinct)', 'e');
+    return;
+  }
+
   /* Apply night ATK bonus */
   var nightBonus = (typeof nightAtkBonus === 'function') ? nightAtkBonus() : 0;
   var atk = Math.max(1, e.atk + rnd(6) - 3 + nightBonus);
@@ -217,7 +224,8 @@ function enemyTurn() {
     if (C.sa <= 0) C.shld = false;
     cLog('🔵 Shield absorbs. ' + atk + ' dmg taken.', 'e');
   } else {
-    atk = Math.max(1, atk - Math.round(P.def * 0.35));
+    var armorNatural = (P.passives && P.passives.armor_natural) ? P.passives.armor_natural : 0;
+    atk = Math.max(1, atk - Math.round(P.def * 0.35) - armorNatural);
     cLog(e.n + ' strikes for ' + atk + ' dmg.', 'e');
   }
 

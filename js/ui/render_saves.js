@@ -42,8 +42,13 @@ function _renderSaveOverlay() {
     /* Header */
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">',
       '<div style="font-family:Georgia,serif;font-size:17px;color:var(--gold)">' + title + '</div>',
-      '<button onclick="closeSaveMenu()" style="background:none;border:none;color:var(--mut);',
-        'font-size:18px;cursor:pointer;padding:2px 6px">✕</button>',
+      '<div style="display:flex;gap:8px;align-items:center">',
+        '<button onclick="confirmNewGame()" style="background:none;border:1px solid #3a2a1a;',
+          'color:#8a6a3a;font-size:10px;cursor:pointer;padding:3px 9px;letter-spacing:0.05em">',
+          '⟳ New Game</button>',
+        '<button onclick="closeSaveMenu()" style="background:none;border:none;color:var(--mut);',
+          'font-size:18px;cursor:pointer;padding:2px 6px">✕</button>',
+      '</div>',
     '</div>'
   ];
 
@@ -167,6 +172,36 @@ function confirmDeleteSlot(slot) {
   if (!confirm('Delete Slot ' + slot + '? This cannot be undone.')) return;
   deleteSlot(slot);
   closeSaveMenu();
+}
+
+function confirmNewGame() {
+  if (!confirm('Start a New Game? Unsaved progress will be lost.')) return;
+  closeSaveMenu();
+  CharacterSelect.reset();
+  CharacterSelect.init(function () {
+    /* Reset all mutable game state */
+    P.name = 'Traveler'; P.gold = 50;
+    P.sxp  = { blade:0, archery:0, mysticism:0, fortitude:0, herbalism:0, lore:0 };
+    P.inv  = ['health_potion','health_potion','mana_shard','iron_sword','leather_armor'];
+    P.eq   = { weapon:null, armor:null, accessory:null };
+    P.spells = [];
+    P.area = 'verath_arch';
+    P.quests = {};
+    G.flags = {};
+    G.discovered = { verath_arch: true };
+    TIME.hour = 8; TIME.day = 1; TIME.phase = 'day'; TIME.totalHours = 8;
+    C.on  = false;
+    DLG.on = false;
+    LOG.length = 0;
+    recalc();
+    P.hp = P.maxHp; P.mp = P.maxMp;
+    VIEW = 'explore';
+    document.querySelectorAll('.tab').forEach(function (t) {
+      t.classList.toggle('on', t.dataset.v === 'explore');
+    });
+    addLog("A new journey begins at the Gate Arch of Verath's Gate.", 'i');
+    render();
+  }, true);
 }
 
 function loadAutoSave() {

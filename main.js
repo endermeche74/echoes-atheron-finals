@@ -29,30 +29,37 @@ window.addEventListener('DOMContentLoaded', function () {
   /* ── Check save, offer to load ── */
   var hasSavedGame = hasSave();
 
-  /* ── Init ── */
+  /* ── Init base stats from skills (level 0 defaults) ── */
   recalc();
-  P.hp = P.maxHp;
-  P.mp = P.maxMp;
 
-  /* ── Opening log ── */
-  addLog("You arrive at the Gate Arch of Verath's Gate.", 'i');
-  addLog("🗺  'Where to Go' moves you between areas.", 'n');
-  addLog("⚔  Searching an area finds enemies and XP.", 'n');
-  addLog("💬  Talking to people reveals quests and secrets.", 'n');
-  addLog("📖  Use spell tomes from your inventory to learn spells.", 'n');
-  if (hasSavedGame) {
-    var info = getSaveInfo();
-    if (info) {
-      addLog("💾  Save found — Day " + info.day + " · Total Skill Lv." + info.totalSkl + ". Click Load to continue.", 'd');
+  /* ── Character selection — shows UI or skips if already saved ── */
+  CharacterSelect.init(function () {
+
+    /* applyCharacter() has already run at this point */
+    P.hp = P.maxHp;
+    P.mp = P.maxMp;
+
+    /* ── Opening log ── */
+    addLog("You arrive at the Gate Arch of Verath's Gate.", 'i');
+    addLog("🗺  'Where to Go' moves you between areas.", 'n');
+    addLog("⚔  Searching an area finds enemies and XP.", 'n');
+    addLog("💬  Talking to people reveals quests and secrets.", 'n');
+    addLog("📖  Use spell tomes from your inventory to learn spells.", 'n');
+    if (hasSavedGame) {
+      var info = getSaveInfo();
+      if (info) {
+        addLog("💾  Save found — Day " + info.day + " · Total Skill Lv." + info.totalSkl + ". Click Load to continue.", 'd');
+      }
     }
-  }
 
-  /* ── Force explore tab active ── */
-  VIEW = 'explore';
-  document.querySelectorAll('.tab').forEach(function (t) {
-    t.classList.toggle('on', t.dataset.v === 'explore');
+    /* ── Force explore tab active ── */
+    VIEW = 'explore';
+    document.querySelectorAll('.tab').forEach(function (t) {
+      t.classList.toggle('on', t.dataset.v === 'explore');
+    });
+
+    /* ── First render ── */
+    render();
+
   });
-
-  /* ── First render ── */
-  render();
 });

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carte mentale — Stage PV & H₂</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:#f5f5f0;display:flex;flex-direction:column;align-items:center;padding:24px 16px;min-height:100vh}
+  h1{font-size:15px;font-weight:500;color:#555;margin-bottom:12px;letter-spacing:.02em}
+  #wrap{width:100%;max-width:720px}
+  svg{width:100%;height:auto}
+  .mn{cursor:pointer}.mn rect{transition:stroke-width .12s,filter .12s}.mn:hover rect{filter:brightness(.93)}
+  #panel{display:none;margin-top:8px;border:1px solid #ddd;border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  #ph{padding:12px 16px;font-size:14px;font-weight:600;border-bottom:1px solid #eee}
+  #pb{padding:8px 16px 12px}
+  .pi{padding:7px 0;border-bottom:1px solid #f0f0f0;display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:start}
+  .pi:last-child{border-bottom:none}
+  .pl{font-weight:600;font-size:12px;color:#333;padding-top:1px}
+  .pv{font-size:12px;color:#555;line-height:1.6}
+  @media(prefers-color-scheme:dark){
+    body{background:#1a1a1a}#panel{background:#242424;border-color:#3a3a3a}
+    #ph{border-bottom-color:#333}.pi{border-bottom-color:#333}
+    .pl{color:#ddd}.pv{color:#999}h1{color:#888}
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+<h1>Stage PV &amp; H₂ — Cliquez sur une branche pour lire son contenu</h1>
+<svg viewBox="0 0 680 500" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<style>
+.t{font:14px system-ui,sans-serif;fill:#444}
+.th{font:500 14px system-ui,sans-serif;fill:#333}
+.ts{font:12px system-ui,sans-serif;fill:#666}
+/* branch colors */
+.c-teal rect{fill:#E1F5EE;stroke:#0F6E56}
+.c-teal text{fill:#085041}
+.c-amber rect{fill:#FAEEDA;stroke:#854F0B}
+.c-amber text{fill:#633806}
+.c-blue rect{fill:#E6F1FB;stroke:#185FA5}
+.c-blue text{fill:#0C447C}
+.c-green rect{fill:#EAF3DE;stroke:#3B6D11}
+.c-green text{fill:#27500A}
+.c-coral rect{fill:#FAECE7;stroke:#993C1D}
+.c-coral text{fill:#712B13}
+.c-purple rect{fill:#EEEDFE;stroke:#534AB7}
+.c-purple text{fill:#3C3489}
+.c-gray rect{fill:#F1EFE8;stroke:#888780}
+.c-gray text{fill:#2C2C2A}
+@media(prefers-color-scheme:dark){
+.c-teal rect{fill:#085041;stroke:#5DCAA5}.c-teal text{fill:#9FE1CB}
+.c-amber rect{fill:#633806;stroke:#EF9F27}.c-amber text{fill:#FAC775}
+.c-blue rect{fill:#0C447C;stroke:#378ADD}.c-blue text{fill:#B5D4F4}
+.c-green rect{fill:#27500A;stroke:#639922}.c-green text{fill:#C0DD97}
+.c-coral rect{fill:#712B13;stroke:#D85A30}.c-coral text{fill:#F5C4B3}
+.c-purple rect{fill:#3C3489;stroke:#7F77DD}.c-purple text{fill:#CECBF6}
+.c-gray rect{fill:#2C2C2A;stroke:#888780}.c-gray text{fill:#D3D1C7}
+.th{fill:#ccc}.ts{fill:#888}
+}
+</style>
+</defs>
+
+<!-- Connector lines -->
+<line x1="340" y1="267" x2="340" y2="162" stroke="#aaa" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="380" y1="267" x2="432" y2="237" stroke="#aaa" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="380" y1="313" x2="432" y2="343" stroke="#aaa" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="340" y1="313" x2="340" y2="418" stroke="#aaa" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="300" y1="313" x2="248" y2="343" stroke="#aaa" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="300" y1="267" x2="248" y2="237" stroke="#aaa" stroke-width="1.5" stroke-linecap="round"/>
+
+<!-- Centre -->
+<g class="c-gray">
+  <rect x="276" y="267" width="128" height="46" rx="10" stroke-width="1"/>
+  <text class="th" x="340" y="290" text-anchor="middle" dominant-baseline="central">Stage PV &amp; H₂</text>
+</g>
+
+<!-- Branches principales -->
+<g class="mn c-teal" id="n-semi" onclick="S('semi')">
+  <rect x="275" y="118" width="130" height="44" rx="8" stroke-width="0.5"/>
+  <text class="th" x="340" y="140" text-anchor="middle" dominant-baseline="central">Semi-conducteurs</text>
+</g>
+<g class="mn c-amber" id="n-cell" onclick="S('cell')">
+  <rect x="405" y="193" width="130" height="44" rx="8" stroke-width="0.5"/>
+  <text class="th" x="470" y="215" text-anchor="middle" dominant-baseline="central">Cellule PV</text>
+</g>
+<g class="mn c-blue" id="n-mppt" onclick="S('mppt')">
+  <rect x="405" y="343" width="130" height="44" rx="8" stroke-width="0.5"/>
+  <text class="th" x="470" y="365" text-anchor="middle" dominant-baseline="central">MPPT</text>
+</g>
+<g class="mn c-green" id="n-ray" onclick="S('ray')">
+  <rect x="275" y="418" width="130" height="44" rx="8" stroke-width="0.5"/>
+  <text class="th" x="340" y="440" text-anchor="middle" dominant-baseline="central">Rayonnement</text>
+</g>
+<g class="mn c-coral" id="n-hyd" onclick="S('hyd')">
+  <rect x="145" y="343" width="130" height="44" rx="8" stroke-width="0.5"/>
+  <text class="th" x="210" y="365" text-anchor="middle" dominant-baseline="central">Hydrogène</text>
+</g>
+<g class="mn c-purple" id="n-lab" onclick="S('lab')">
+  <rect x="145" y="193" width="130" height="44" rx="8" stroke-width="0.5"/>
+  <text class="th" x="210" y="215" text-anchor="middle" dominant-baseline="central">Labo</text>
+</g>
+
+<text class="ts" x="340" y="488" text-anchor="middle" opacity="0.5">↑ cliquez sur une branche pour lire le contenu</text>
+</svg>
+
+<!-- Panneau de contenu -->
+<div id="panel">
+  <div id="ph"></div>
+  <div id="pb"></div>
+</div>
+</div>
+
+<script>
+const D={
+  semi:{l:"Semi-conducteurs & Physique PV",c:["#0F6E56","#5DCAA5"],i:[
+    ["Bandes Ec / Ev","Ec = bas de la bande de conduction (siège du courant électrique). Ev = haut de la bande de valence (électrons liants entre atomes)."],
+    ["Gap Eg — bande interdite","Zone d'énergie interdite entre Ev et Ec. Petit gap → semi-conducteur. Grand gap → isolant. Mesurable via le seuil d'absorption optique."],
+    ["Niveau de Fermi EF","Énergie d'équilibre des porteurs de charge. Dans un semi-conducteur intrinsèque : EF se situe à mi-gap. Correspond au travail d'extraction des électrons."],
+    ["Si — gap indirect","La transition Ev→Ec nécessite un phonon (vibration du réseau cristallin) → absorption progressive → épaisseur 200–300 μm nécessaire pour absorber le solaire (vs quelques μm pour un gap direct)."],
+    ["Dopage N (phosphore)","Phosphore : 5 e⁻ de valence → donneur d'électrons. Porteurs majoritaires : électrons libres. Concentration typique dans l'émetteur : 1–2×10²⁰ cm⁻³."],
+    ["Dopage P (bore)","Bore : 3 e⁻ de valence → accepteur, crée des trous. Porteurs majoritaires : trous. Concentration dans la base : 5×10¹⁵ cm⁻³."],
+  ]},
+  cell:{l:"Cellule Photovoltaïque",c:["#854F0B","#EF9F27"],i:[
+    ["Émetteur n⁺ (E)","Épaisseur ≈ 0.3 μm. [P] = 1–2×10²⁰ cm⁻³. Zone la plus proche de la surface, exposée à la lumière."],
+    ["Zone de déplétion (w)","≈ 0.3 μm à la jonction p-n. Champ électrique interne sépare e⁻ et trous photo-générés. S'étend principalement dans la base (moins dopée)."],
+    ["Base p₀ (B)","200–300 μm d'épaisseur. [B] = 5×10¹⁵ cm⁻³. Zone la plus épaisse, absorbe le proche infrarouge."],
+    ["Pertes radiatives","IR (sous le gap) → traversent sans absorption → 18% de l'énergie perdue. UV (sur le gap) → 1 paire e⁻/trou créée, excédent → chaleur réseau → 28% perdu."],
+    ["Schéma équivalent","Source Iph (∝ éclairement) + diode Id + résistance shunt Rsh + résistance série Rs (contacts, doigts de grille). I = Iph − Id − V/Rsh."],
+    ["FF & Rendement","FF = Pm / (Icc × Vco). ηC = 16–26% (cellules 2018). Meilleurs modules : jusqu'à 22.2% (SUNPOWER). Pm se lit graphiquement sur la courbe I(V)."],
+    ["Améliorations","Structuration surface en pyramides / nid-d'abeilles (piégeage lumière). Couches de passivation. Sur-dopage n⁺ sous contacts. Champ arrière p⁺."],
+  ]},
+  mppt:{l:"MPPT — Maximum Power Point Tracking",c:["#185FA5","#378ADD"],i:[
+    ["Principe général","Adapter en permanence VMPP / IMPP pour extraire la puissance maximale quelles que soient T° et irradiance. Le MPP est trouvé par essai-erreur."],
+    ["Fixed Duty Cycle","Le plus simple. Réglage unique, jamais actualisé. Aucun retour d'information."],
+    ["Méthode Beta","Variable β = f(V, I, T, constantes jonction). β quasi-constante au MPP → boucle fermée sur référence constante."],
+    ["Perturb & Observe (P&O)","Perturbe la tension V du panneau, observe ΔP. Si ΔP>0 → même sens. Si ΔP<0 → sens inverse. Le plus utilisé en pratique."],
+    ["Hill Climbing","Même principe que P&O mais perturbe le rapport cyclique du convertisseur (et non V directement)."],
+    ["Incremental Conductance","Condition MPP : dI/dV = −I/V. Compare conductance incrémentale et instantanée. Sait quand il est au MPP → arrête. Robuste sous irradiance variable."],
+    ["Limites P&O","Grand pas → rapide mais oscillations fortes. Petit pas → précis mais lent. Erratique sous ombrage partiel ou irradiance variant rapidement."],
+    ["CerboGX + MPPT100","Contrôleur Victron Energy (matériel réel dans le labo). Supervision complète de l'installation. Couplé au JNE pour comparer réel vs simulé."],
+  ]},
+  ray:{l:"Rayonnement Solaire",c:["#3B6D11","#639922"],i:[
+    ["Direct","Traverse l'atmosphère sans modification. Vient directement du disque solaire. Direction précisément définie."],
+    ["Diffus","Diffusé par les particules en suspension : nuages, aérosols, poussières, bâtiments. Pas de direction privilégiée."],
+    ["Réfléchi","Fraction réfléchie par le sol, la végétation, les bâtiments. Caractérisé par l'albédo. Corps noir parfait → albédo = 0."],
+    ["Global","Somme des trois composantes : Global = Direct + Diffus + Réfléchi. Grandeur mesurée sur le plan du capteur."],
+    ["Station météo (labo)","Mesure : irradiance IR, UV, humidité, vitesse du vent. Skyviewer + mini-ordinateur numérise les données. 11 stations de ce type dans le monde."],
+  ]},
+  hyd:{l:"Hydrogène — Production & Stockage",c:["#993C1D","#D85A30"],i:[
+    ["Chaîne complète","PV → électricité → Électrolyseur → H₂ stocké → Pile à combustible → électricité. Objectif : stocker l'excédent PV (beau temps) pour les périodes de faible production."],
+    ["Électrolyse de l'eau","Courant électrique (issu des PV) dans l'eau → H₂ se dégage à la cathode, O₂ à l'anode."],
+    ["Pile à combustible","H₂ + O₂ → électricité + eau. Réaction inverse de l'électrolyse. Restitue l'énergie stockée."],
+    ["Montage parallèle ✓ (préférable)","Tension constante → favorable à l'électrolyse → débit H₂ se multiplie par le nombre d'électrolyseurs. Rendement stable."],
+    ["Montage série ✗","Tension divisée par n → puissance consommée réduite → débit H₂ chute. Moins efficace."],
+    ["Diodes de blocage","Empêchent le courant de circuler vers les panneaux ombragés (protection contre les points chauds). Empêchent aussi la décharge des batteries dans les panneaux la nuit."],
+  ]},
+  lab:{l:"Visite du Laboratoire",c:["#534AB7","#7F77DD"],i:[
+    ["Salle 1 — Conversion CC/CA","Objectif : limiter les conversions multiples CA↔CC (pertes à chaque étape). Distribution directe en CC. PoE (alimentation via câble réseau). Transmission via ondes WiFi/4G."],
+    ["JNE — Jumeau Numérique","Jumeau Numérique d'Enseignement : simule en temps réel PV, éolienne… via alimentations programmables. Comparé au système Victron réel (MPPT100 + CerboGX)."],
+    ["Salle 2 — Gravure circuits","Attaque chimique (acide en moule sur la zone voulue) ou fraisage CNC pour dessiner le pattern. Désormais ils achètent directement les circuits."],
+    ["MPPT100 + CerboGX","Installation Victron Energy réelle dans le labo. Sert à comparer les mesures réelles vs le JNE simulé."],
+    ["Salle 4 — Hydrogène","Électrolyseur (boîte avec diffuseur) alimenté par PV → H₂. Pile à combustible reconvertit en électricité. Chaîne complète visible en direct."],
+    ["Station météo","Mesure : irradiance, IR, UV, humidité, vitesse du vent. Skyviewer convertit en numérique. 11 stations de ce type dans le monde."],
+  ]}
+};
+
+const dk=matchMedia('(prefers-color-scheme:dark)').matches;
+let cur=null;
+
+function S(id){
+  const panel=document.getElementById('panel');
+  const ph=document.getElementById('ph');
+  const pb=document.getElementById('pb');
+  if(cur){
+    const old=document.getElementById('n-'+cur);
+    if(old)old.querySelector('rect').setAttribute('stroke-width','0.5');
+  }
+  if(cur===id){panel.style.display='none';cur=null;return;}
+  cur=id;
+  const node=document.getElementById('n-'+id);
+  if(node)node.querySelector('rect').setAttribute('stroke-width','2');
+  const c=D[id].c[dk?1:0];
+  ph.style.color=c;
+  ph.style.borderLeft='4px solid '+c;
+  ph.style.paddingLeft='12px';
+  ph.textContent=D[id].l;
+  pb.innerHTML=D[id].i.map(([l,v])=>`<div class="pi"><span class="pl">${l}</span><span class="pv">${v}</span></div>`).join('');
+  panel.style.display='block';
+}
+</script>
+</body>
+</html>

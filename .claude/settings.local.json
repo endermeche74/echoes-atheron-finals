@@ -5,7 +5,12 @@
       "Bash(npx --yes serve -l 8080)",
       "Bash(npx serve *)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "PowerShell(New-Item *)",
+      "PowerShell(npx skills add anthropics/skills --skill frontend-design 2>&1 | Select-Object -First 10)",
+      "PowerShell(npx skills add anthropics/skills --skill frontend-design 2>&1)",
+      "PowerShell(npx skills add anthropics/skills --skill webapp-testing 2>&1; npx skills add mcollina/skills --skill nodejs 2>&1)",
+      "PowerShell(npx skills add mcollina/skills --skill node 2>&1; npx skills add mcollina/skills --skill nodejs-core 2>&1)"
     ]
   }
 }
